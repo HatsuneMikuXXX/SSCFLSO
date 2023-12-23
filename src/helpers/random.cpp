@@ -1,8 +1,4 @@
 #include "random.h"
-using namespace std;
-
-int SEED = 0; // Currently not in used but maybe for experiments later on.
-
 float random(){
 	return float(rand())/RAND_MAX;
 }
@@ -22,11 +18,14 @@ float uniform(float lower_bound, float upper_bound, bool integer){
 	return x;
 }
 
-// Return a random number from a triangular distribution. MINMAX method from https://www.sciencedirect.com/science/article/pii/S0895717708002665
 float triangular(float lower_bound, float upper_bound, float peak){
-	assert(peak >= lower_bound && peak <= upper_bound);
+	if(peak < lower_bound || peak > upper_bound){
+		throw std::runtime_error("Peak must be defined within the bounds.");
+	}
 	float u = uniform(lower_bound, upper_bound);
 	float v = uniform(lower_bound, upper_bound);
 	float c = (peak - lower_bound)/(upper_bound - lower_bound);
+	auto min = [](float a, float b) { return a < b ? a : b; };
+	auto max = [](float a, float b) { return a > b ? a : b; };
 	return (1. - c) * min(u, v) + c * max(u, v);
 }

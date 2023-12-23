@@ -1,15 +1,31 @@
-#include <vector>
-using namespace std;
+#include "data_helper.h"
 
-template<typename T>
-bool contains(vector<T>* container, T x){
-	return (find(container->begin(), container->end(), x) != container->end());
-};
+std::vector<int> range(int n){
+	std::vector<int> res{};
+	for(int i = 0; i < n; i++){
+		res.push_back(i);
+	}
+	return res;
+}
 
-template<typename T1, typename T2>
-vector<T1> get_firsts(vector<pair<T1, T2>>* pairs){
-	vector<T1> filtered;
-	auto lambda = [](pair<T1, T2> pair){ return pair.first; };
-	transform(pairs->begin(), pairs->end(), back_inserter(filtered), lambda);
-	return filtered;
-};
+bool areSame(float a, float b){
+	return fabs(a - b) < EPSILON;
+}
+
+std::string solution_to_string(const std::vector<int>& container){
+	std::string res = "[";
+	for(int entry : container){
+		res += std::to_string(entry) + ", ";
+	}
+	res = res.substr(0, res.size() - 2) + "]";
+	return res;
+}
+
+std::string solution_to_string(const std::vector<float>& container){
+	std::string res = "[";
+	for(float entry : container){
+		res += std::to_string(entry) + ", ";
+	}
+	res = res.substr(0, res.size() - 2) + "]";
+	return res;
+}
