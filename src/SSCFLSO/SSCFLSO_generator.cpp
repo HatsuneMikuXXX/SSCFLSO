@@ -194,7 +194,7 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 				facility_dist_pairs.push_back(std::pair<int, float>(facility, dist));
 			}
 			sort(facility_dist_pairs.begin(), facility_dist_pairs.end(), sort_by_second);
-			instance.preferences[client] = get_firsts<int, float>(facility_dist_pairs);
+			instance.preferences.push_back(get_firsts<int, float>(facility_dist_pairs)); 
 		}
 	}
 	else{

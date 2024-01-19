@@ -7,6 +7,7 @@ solution local_search(const SSCFLSO& instance){
 	FLV.set_solution(open_facilities);
 	int current_value = FLV.value();
 	while(true){
+		
 		if(add(FLV, open_facilities, closed_facilities, current_value)){ continue; }
 		if(remove(FLV, open_facilities, closed_facilities, current_value)){ continue; }
 		if(swap(FLV, open_facilities, closed_facilities, current_value)){ continue; }
@@ -68,7 +69,7 @@ bool swap(Validator& FLV, solution& open_facilities, std::vector<int>& closed_fa
 				open_facilities.erase(position);
 				closed_facilities.push_back(facility_rem);
 				position = find(closed_facilities.begin(), closed_facilities.end(), facility_add);
-				open_facilities.erase(position);
+				closed_facilities.erase(position);
 				current_value = FLV.value();
 				return true;
 			}
