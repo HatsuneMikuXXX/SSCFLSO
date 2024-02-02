@@ -1,5 +1,9 @@
 #include "SSCFLSO_validator.h"
 
+/**
+ * Responsible for checking solutions for feasibility and computing solution values
+*/
+
 Validator::Validator(const SSCFLSO& instance) : ref_instance(instance){
 	this->assign_rankings();
 	this->open_facilities = std::vector<int>();

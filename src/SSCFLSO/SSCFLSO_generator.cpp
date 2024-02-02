@@ -1,5 +1,9 @@
 #include "SSCFLSO_generator.h"
 
+/**
+ * Responsible for creating SSCFLSO instances, saving instances as files, and loading instances from files.
+*/
+
 Generator::Generator(int J, int I){
 	this->instance.facilities = J;
 	this->instance.clients = I;
@@ -26,16 +30,18 @@ void Generator::set_dist_cost(int facility, int client, float dist_cost){
 	this->instance.dist_costs[facility][client] = dist_cost;
 }
 
-void Generator::set_preferences(int category){
+void Generator::set_preferences(Category category){
 	int I = this->instance.clients;
-	std::vector<int> clients = range(I);
 	int J = this->instance.facilities;
+	std::vector<int> clients = range(I);
 	std::vector<int> facilities = range(J);
+	// sort_by_second, used for sorting a vector consisting of tuples in ascending, by-second-entry order  
 	auto sort_by_second = [](std::pair<int, float> pair1, std::pair<int, float> pair2){ return (pair1.second < pair2.second); };
 	switch(category){
-		case 0:
-			// Preferences = Distance
+		case cooperative:
+			// Preferences = Shortest distance is most preferred
 			for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
+				// For each client i, create a vector containing tuples (j, c_ji) for all facilities j in J then sort it
 				std::vector<std::pair<int, float>> facility_dist_pairs = std::vector<std::pair<int, float>>();
 				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
 					float dist = this->instance.dist_costs[*facility_it][*client_it];
@@ -45,7 +51,7 @@ void Generator::set_preferences(int category){
 				this->instance.preferences[*client_it] = get_firsts<int, float>(facility_dist_pairs);
 			}
 			break;
-		case 1:
+		case linear_bias:
 			// Preference = Pertubated distance (draw from triangular distribution)
 			for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
 				float min_dist_of_client = this->instance.dist_costs[0][*client_it];
@@ -61,7 +67,7 @@ void Generator::set_preferences(int category){
 					}
 				}
 				std::vector<std::pair<int, float>> facility_dist_pairs = std::vector<std::pair<int, float>>();
-				// Get triangular distribution fake costs
+				// Use minimum and maximum as well as the true distance to draw fake costs from a triangular distribution
 				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
 					float true_cost = this->instance.dist_costs[*facility_it][*client_it];
 					float dist = triangular(min_dist_of_client, max_dist_of_client, true_cost);
@@ -144,7 +150,7 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 	std::vector<float> data = std::vector<float>();
 	while(file){
 		file.get(current_character);
-		// 48 = '0', 57 = '9', and 46 = '.'
+		// integer value/char: 48 = '0', 57 = '9', and 46 = '.'
 		if((current_character >= 48 && current_character <= 57) || current_character == 46){
 			symbol += current_character; 
 		}
@@ -186,6 +192,7 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 	index += J * I;
 	// Preferences
 	if(!preferences_included){
+		// Create preferences using the data
 		auto sort_by_second = [](std::pair<int, float> pair1, std::pair<int, float> pair2){ return (pair1.second < pair2.second); };
 		for(int client = 0; client < I; client++){
 			std::vector<std::pair<int, float>> facility_dist_pairs = std::vector<std::pair<int, float>>();
@@ -198,6 +205,7 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 		}
 	}
 	else{
+		// Read in given preferences
 		for(int client = 0; client < I; client++){
 			std::vector<int> preferences_of_client = std::vector<int>();
 			// Maybe here a cast problem, we'll see
@@ -211,6 +219,7 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 }
 
 void Generator::i300(const std::string& filename){
+	// Create own i300 instances
 	int J = this->instance.facilities;
 	int I = this->instance.clients;
 	this->instance.demands = std::vector<float>(I, 0);
@@ -249,7 +258,7 @@ void Generator::i300(const std::string& filename){
 		this->instance.capacities[facility] = capacity;
 		this->instance.open_costs[facility] = uniform(0, 90) + uniform(100, 110) * sqrt(capacity);
 	}
-	this->set_preferences(0);
+	this->set_preferences(cooperative);
 	if(!filename.empty()){
 		this->save_instance(this->instance, filename, true);
 	}

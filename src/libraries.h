@@ -1,0 +1,6 @@
+#include "algorithms/stingy/unit_test.h"
+#include "algorithms/greedy/unit_test.h"
+#include "algorithms/local_search/unit_test.h"
+#include "SSCFLSO/unit_test.h"
+#include "helpers/unit_test.h"
+#include "helpers/benchmark.h"
