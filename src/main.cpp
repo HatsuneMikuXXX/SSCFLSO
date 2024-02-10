@@ -5,5 +5,6 @@ typedef std::function<solution(SSCFLSO&)> algorithm;
 
 int main()
 {
-    HelpersUnitTest::run_tests();
+    bool success = PreprocessUnitTest::run_tests();
+    return success;
 }

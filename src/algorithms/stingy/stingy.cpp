@@ -1,29 +1,26 @@
 #include "stingy.h"
 
-solution stingy(const SSCFLSO& instance){
+std::vector<facility_vector> remove_neighborhood(facility_vector& x);
+
+facility_vector stingy(const SSCFLSO& instance){
 	Validator FLV = Validator(instance);
-	solution open_facilities = preprocess(instance);
-	std::vector<int> tmp_facilities;
-	std::vector<int>::iterator position;
-	std::vector<std::pair<int, float>> costs;
-	auto sort_by_second = [](std::pair<int, float> pair1, std::pair<int, float> pair2){ return pair1.second < pair2.second; };
-	while(true){
-		// Determine costs
-		costs = {};
-		for(int facility : open_facilities){
-			tmp_facilities = open_facilities;
-			position = find(tmp_facilities.begin(), tmp_facilities.end(), facility);
-			tmp_facilities.erase(position);
-			FLV.set_solution(tmp_facilities);
-			if(FLV.feasible()){
-				costs.push_back(std::pair<int, float>(facility, FLV.value()));
+	facility_vector solution = preprocess(instance);
+	FLV.set_solution(solution);
+	bool stuck_in_local_optima = false;
+	while(!stuck_in_local_optima){
+		stuck_in_local_optima = true;
+		// Search neighborhood
+		double current_value = FLV.value();
+		std::vector<facility_vector> neighborhood = remove_neighborhood(solution);
+		for (auto it = neighborhood.begin(); it != neighborhood.end(); it++) {
+			FLV.set_solution(*it);
+			if (FLV.feasible() && FLV.value() < current_value) {
+				current_value = FLV.value();
+				solution = *it; // For the next while-iteration
+				stuck_in_local_optima = false;
 			}
 		}
-		if(costs.empty()){ break; }
-		// Choose best
-		sort(costs.begin(), costs.end(), sort_by_second);
-		position = find(open_facilities.begin(), open_facilities.end(), costs[0].first);
-		open_facilities.erase(position);
+		FLV.set_solution(solution);
 	}
-	return open_facilities;
+	return solution;
 }

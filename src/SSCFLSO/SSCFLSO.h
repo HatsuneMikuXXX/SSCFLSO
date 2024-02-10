@@ -1,13 +1,14 @@
 #ifndef SSCFLSO_H
 #define SSCFLSO_H
-#include <vector>
+#include "../common.h"
+#include "../typedefinitions.h"
 struct SSCFLSO {
 	int facilities = 0; // Number of facilities. Identifiers zero-based.
 	int clients = 0; // Number of clients. Identifiers zero-based.
-	std::vector<float> demands = std::vector<float>(); // Size |I|.
-	std::vector<float> capacities = std::vector<float>(); // Size |J|.
-	std::vector<float> open_costs = std::vector<float>(); // Size |J|. Cost to open a facility.
-	std::vector<std::vector<float>> dist_costs = std::vector<std::vector<float>>(); // Size |J| times |I|. Cost to distribute/of the distance from a facility to a client.
-	std::vector<std::vector<int>> preferences = std::vector<std::vector<int>>(); // Size |I| times |J|. First element (facility) is the most preferred.
+	demand_vector demands = std::vector<double>(); // Size |I|.
+	capacity_vector capacities = std::vector<double>(); // Size |J|.
+	facility_cost_vector facility_costs = std::vector<double>(); // Size |J|. Cost to open a facility.
+	distribution_cost_matrix distribution_costs = std::vector<std::vector<double>>(); // Size |J| times |I|. Cost to distribute/of the distance from a facility to a client.
+	preference_matrix preferences = std::vector<std::vector<int>>(); // Size |I| times |J|. First element (facility) is the most preferred.
 };
 #endif

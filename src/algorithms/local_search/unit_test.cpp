@@ -17,7 +17,7 @@ namespace LocalSearchUnitTest{
 			throw std::runtime_error("Solution space is empty but Local Search returned a feasible solution");
 		}
 		y = Generator::load_instance("src/algorithms/stingy/unit_test_stingy1.plc");
-		solution res = local_search(y);
+		facility_vector res = local_search(y);
 		if(!(res.size() == 3 && contains(res, 2) && contains(res, 3))){
 			throw std::runtime_error("The returned solution should be of size 3 and contain the facilities 2 and 3.");
 		}

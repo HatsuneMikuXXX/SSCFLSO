@@ -7,58 +7,60 @@
 Generator::Generator(int J, int I){
 	this->instance.facilities = J;
 	this->instance.clients = I;
-	this->instance.demands = std::vector<float>(I, 0);
-	this->instance.capacities = std::vector<float>(J, 0);
-	this->instance.open_costs = std::vector<float>(J, 0);
-	this->instance.dist_costs = std::vector<std::vector<float>>(J, std::vector<float>(I, 0));
+	this->instance.demands = std::vector<double>(I, 0);
+	this->instance.capacities = std::vector<double>(J, 0);
+	this->instance.facility_costs = std::vector<double>(J, 0);
+	this->instance.distribution_costs = std::vector<std::vector<double>>(J, std::vector<double>(I, 0));
 	this->instance.preferences = std::vector<std::vector<int>>(I, std::vector<int>(J, -1));
 }
 
-void Generator::set_demand(int client, float demand){
+void Generator::set_demand(int client, double demand){
 	this->instance.demands[client] = demand;
 }
 
-void Generator::set_capacity(int facility, float capacity){
+void Generator::set_capacity(int facility, double capacity){
 	this->instance.capacities[facility] = capacity;
 }
 
-void Generator::set_open_cost(int facility, float open_cost){
-	this->instance.open_costs[facility] = open_cost;
+void Generator::set_facility_cost(int facility, double facility_cost){
+	this->instance.facility_costs[facility] = facility_cost;
 }
 
-void Generator::set_dist_cost(int facility, int client, float dist_cost){
-	this->instance.dist_costs[facility][client] = dist_cost;
+void Generator::set_distribution_cost(int facility, int client, double distribution_cost){
+	this->instance.distribution_costs[facility][client] = distribution_cost;
 }
 
 void Generator::set_preferences(Category category){
-	int I = this->instance.clients;
-	int J = this->instance.facilities;
-	std::vector<int> clients = range(I);
-	std::vector<int> facilities = range(J);
+	std::vector<int> clients = range(this->instance.clients);
+	std::vector<int> facilities = range(this->instance.facilities);
+
 	// sort_by_second, used for sorting a vector consisting of tuples in ascending, by-second-entry order  
-	auto sort_by_second = [](std::pair<int, float> pair1, std::pair<int, float> pair2){ return (pair1.second < pair2.second); };
+	auto sort_by_second = [](std::pair<int, double> pair1, std::pair<int, double> pair2){ 
+		return (pair1.second < pair2.second); 
+	};
+	std::vector<std::pair<int, double>> facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
 	switch(category){
 		case cooperative:
 			// Preferences = Shortest distance is most preferred
 			for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
-				// For each client i, create a vector containing tuples (j, c_ji) for all facilities j in J then sort it
-				std::vector<std::pair<int, float>> facility_dist_pairs = std::vector<std::pair<int, float>>();
+				facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
 				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
-					float dist = this->instance.dist_costs[*facility_it][*client_it];
-					facility_dist_pairs.push_back(std::pair<int, float>(*facility_it, dist));
+					double dist = this->instance.distribution_costs[*facility_it][*client_it];
+					facility_distribution_cost_pairs.push_back(std::pair<int, double>(*facility_it, dist));
 				}
-				sort(facility_dist_pairs.begin(), facility_dist_pairs.end(), sort_by_second);
-				this->instance.preferences[*client_it] = get_firsts<int, float>(facility_dist_pairs);
+				sort(facility_distribution_cost_pairs.begin(), facility_distribution_cost_pairs.end(), sort_by_second);
+				this->instance.preferences[*client_it] = get_firsts<int, double>(facility_distribution_cost_pairs);
 			}
-			break;
+			return;
+
 		case linear_bias:
 			// Preference = Pertubated distance (draw from triangular distribution)
 			for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
-				float min_dist_of_client = this->instance.dist_costs[0][*client_it];
-				float max_dist_of_client = this->instance.dist_costs[0][*client_it];
+				double min_dist_of_client = this->instance.distribution_costs[0][*client_it];
+				double max_dist_of_client = this->instance.distribution_costs[0][*client_it];
 				// Compute minimum and maximum dist cost of client
 				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
-					float next_dist_costs = this->instance.dist_costs[*facility_it][*client_it];
+					double next_dist_costs = this->instance.distribution_costs[*facility_it][*client_it];
 					if(min_dist_of_client > next_dist_costs){
 						min_dist_of_client = next_dist_costs;
 					}
@@ -66,17 +68,17 @@ void Generator::set_preferences(Category category){
 						max_dist_of_client = next_dist_costs;
 					}
 				}
-				std::vector<std::pair<int, float>> facility_dist_pairs = std::vector<std::pair<int, float>>();
+				facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
 				// Use minimum and maximum as well as the true distance to draw fake costs from a triangular distribution
 				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
-					float true_cost = this->instance.dist_costs[*facility_it][*client_it];
-					float dist = triangular(min_dist_of_client, max_dist_of_client, true_cost);
-					facility_dist_pairs.push_back(std::pair<int, float>(*facility_it, dist));
+					double true_cost = this->instance.distribution_costs[*facility_it][*client_it];
+					double dist = triangular(min_dist_of_client, max_dist_of_client, true_cost);
+					facility_distribution_cost_pairs.push_back(std::pair<int, double>(*facility_it, dist));
 				}
-				sort(facility_dist_pairs.begin(), facility_dist_pairs.end(), sort_by_second);
-				this->instance.preferences[*client_it] = get_firsts<int, float>(facility_dist_pairs);
+				sort(facility_distribution_cost_pairs.begin(), facility_distribution_cost_pairs.end(), sort_by_second);
+				this->instance.preferences[*client_it] = get_firsts<int, double>(facility_distribution_cost_pairs);
 			}
-			break;
+			return;
 		default:
 			throw std::runtime_error("Category" + std::to_string(category) + " is not defined.");
 	}
@@ -115,12 +117,12 @@ void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& fi
 	}
 	// Opening costs
 	for(int facility = 0; facility < J; facility++){
-		line4 += std::to_string(ref_instance.open_costs[facility]) + "\t";
+		line4 += std::to_string(ref_instance.facility_costs[facility]) + "\t";
 	}
 	// Distance/Distribution costs
 	for(int facility = 0; facility < J; facility++){
 		for(int client = 0; client < I; client++){
-			line5 += std::to_string(ref_instance.dist_costs[facility][client]) + "\t";
+			line5 += std::to_string(ref_instance.distribution_costs[facility][client]) + "\t";
 		}
 		line5 += "\n";
 	}
@@ -144,10 +146,10 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 	if(!file){
 		throw std::runtime_error("Load failed. Cannot find file: " + filename);
 	}
-	// Parse data - Extract numbers (including `.` for floating points) only.
+	// Parse data - Extract numbers (including `.` for doubleing points) only.
 	char current_character;
 	std::string symbol = "";
-	std::vector<float> data = std::vector<float>();
+	std::vector<double> data = std::vector<double>();
 	while(file){
 		file.get(current_character);
 		// integer value/char: 48 = '0', 57 = '9', and 46 = '.'
@@ -178,30 +180,30 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 	index += J;
 	// Open costs
 	for(int access = index; access < index + J; access++){
-		instance.open_costs.push_back(data[access]);
+		instance.facility_costs.push_back(data[access]);
 	}
 	index += J;
 	// Distribution costs
 	for(int facility = 0; facility < J; facility++){
-		std::vector<float> dist_costs_of_facility = std::vector<float>();
+		std::vector<double> dist_costs_of_facility = std::vector<double>();
 		for(int access = (index + facility * I); access < (index + (facility + 1) * I); access++){
 			dist_costs_of_facility.push_back(data[access]);
 		}
-		instance.dist_costs.push_back(dist_costs_of_facility);
+		instance.distribution_costs.push_back(dist_costs_of_facility);
 	}
 	index += J * I;
 	// Preferences
 	if(!preferences_included){
-		// Create preferences using the data
-		auto sort_by_second = [](std::pair<int, float> pair1, std::pair<int, float> pair2){ return (pair1.second < pair2.second); };
+		// Create preferences using the data - cooperative
+		auto sort_by_second = [](std::pair<int, double> pair1, std::pair<int, double> pair2){ return (pair1.second < pair2.second); };
 		for(int client = 0; client < I; client++){
-			std::vector<std::pair<int, float>> facility_dist_pairs = std::vector<std::pair<int, float>>();
+			std::vector<std::pair<int, double>> facility_dist_pairs = std::vector<std::pair<int, double>>();
 			for(int facility = 0; facility < J; facility++){
-				float dist = instance.dist_costs[facility][client];
-				facility_dist_pairs.push_back(std::pair<int, float>(facility, dist));
+				double dist = instance.distribution_costs[facility][client];
+				facility_dist_pairs.push_back(std::pair<int, double>(facility, dist));
 			}
 			sort(facility_dist_pairs.begin(), facility_dist_pairs.end(), sort_by_second);
-			instance.preferences.push_back(get_firsts<int, float>(facility_dist_pairs)); 
+			instance.preferences.push_back(get_firsts<int, double>(facility_dist_pairs)); 
 		}
 	}
 	else{
@@ -222,41 +224,41 @@ void Generator::i300(const std::string& filename){
 	// Create own i300 instances
 	int J = this->instance.facilities;
 	int I = this->instance.clients;
-	this->instance.demands = std::vector<float>(I, 0);
-	this->instance.capacities = std::vector<float>(J, 0);
-	this->instance.open_costs = std::vector<float>(J, 0);
-	this->instance.dist_costs = std::vector<std::vector<float>>(J, std::vector<float>(I, 0));
+	this->instance.demands = std::vector<double>(I, 0);
+	this->instance.capacities = std::vector<double>(J, 0);
+	this->instance.facility_costs = std::vector<double>(J, 0);
+	this->instance.distribution_costs = std::vector<std::vector<double>>(J, std::vector<double>(I, 0));
 	this->instance.preferences = std::vector<std::vector<int>>(I, std::vector<int>(J, 0));
 	auto u = []{return uniform(0, 1);};
-	std::vector<std::pair<float, float>> clients = std::vector<std::pair<float, float>>();
-	std::vector<std::pair<float, float>> facilities = std::vector<std::pair<float, float>>();
+	std::vector<std::pair<double, double>> clients = std::vector<std::pair<double, double>>();
+	std::vector<std::pair<double, double>> facilities = std::vector<std::pair<double, double>>();
 	// Demands
 	for(int client = 0; client < I; client++){
-		clients.push_back(std::pair<float, float>(u(), u()));
+		clients.push_back(std::pair<double, double>(u(), u()));
 		this->instance.demands[client] = uniform(5, 35);
 	}
 	// Preliminary capacity cost
-	std::vector<float> prelim_capacities = std::vector<float>();
+	std::vector<double> prelim_capacities = std::vector<double>();
 	for(int facility = 0; facility < J; facility++){
-		facilities.push_back(std::pair<float, float>(u(), u()));
+		facilities.push_back(std::pair<double, double>(u(), u()));
 		// Dist costs
 		for(int client = 0; client < I; client++){
-			float c_x = clients[client].first;
-			float c_y = clients[client].second;
-			float f_x = facilities[facility].first;
-			float f_y = facilities[facility].second;
-			this->instance.dist_costs[facility][client] = 10 * sqrt( (pow(c_x - f_x, 2)) * (pow(c_y - f_y, 2)) );
+			double c_x = clients[client].first;
+			double c_y = clients[client].second;
+			double f_x = facilities[facility].first;
+			double f_y = facilities[facility].second;
+			this->instance.distribution_costs[facility][client] = 10 * sqrt( (pow(c_x - f_x, 2)) * (pow(c_y - f_y, 2)) );
 		}
 		prelim_capacities.push_back(uniform(10, 160)); 
 	}
-	float sum_of_capacities = accumulate(prelim_capacities.begin(), prelim_capacities.end(), 0);
-	float sum_of_demands = accumulate(this->instance.demands.begin(), this->instance.demands.end(), 0);
-	float ratio = sum_of_capacities/sum_of_demands;
+	double sum_of_capacities = std::accumulate(prelim_capacities.begin(), prelim_capacities.end(), 0);
+	double sum_of_demands = std::accumulate(this->instance.demands.begin(), this->instance.demands.end(), 0);
+	double ratio = sum_of_capacities/sum_of_demands;
 	// Actual capacity and opening cost
 	for(int facility = 0; facility < J; facility++){
-		float capacity = ratio * prelim_capacities[facility];
+		double capacity = ratio * prelim_capacities[facility];
 		this->instance.capacities[facility] = capacity;
-		this->instance.open_costs[facility] = uniform(0, 90) + uniform(100, 110) * sqrt(capacity);
+		this->instance.facility_costs[facility] = uniform(0, 90) + uniform(100, 110) * sqrt(capacity);
 	}
 	this->set_preferences(cooperative);
 	if(!filename.empty()){

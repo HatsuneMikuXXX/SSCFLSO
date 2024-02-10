@@ -17,7 +17,7 @@ namespace GreedyUnitTest{
 			throw std::runtime_error("Solution space is empty but Greedy returned a feasible solution");
 		}
 		y = Generator::load_instance("src/algorithms/stingy/unit_test_stingy1.plc");
-		solution res = greedy(y);
+		facility_vector res = greedy(y);
 		if(!(res != std::vector<int>{1,2,3})){
 			throw std::runtime_error("The returned solution is different from what is expected.");
 		}

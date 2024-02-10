@@ -1,8 +1,8 @@
-#ifndef HELPER_UNIT_TEST_H
-#define HELPER_UNIT_TEST_H
+#ifndef PREPROCESS_UNIT_TEST_H
+#define PREPROCESS_UNIT_TEST_H
 #include "preprocess.h"
 #include "../SSCFLSO/SSCFLSO_generator.h"
-namespace HelpersUnitTest{
+namespace PreprocessUnitTest{
 	/// @brief Run all tests.
 	/// @return Every test passed.
 	bool run_tests();

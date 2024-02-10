@@ -2,8 +2,7 @@
 #define BENCHMARK_H
 #include "../SSCFLSO/SSCFLSO_validator.h"
 #include "../SSCFLSO/SSCFLSO_generator.h"
-#include <chrono> // Measuring time
-#include <iostream> // Show status in the terminal
+#include "../common.h"
 typedef std::function<std::vector<int>(SSCFLSO&)> algorithm;
 void run(const std::vector<std::pair<std::string, algorithm>>& algorithms, 
 	const std::vector<std::string>& instances, 

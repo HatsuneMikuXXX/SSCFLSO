@@ -5,96 +5,82 @@
 */
 
 Validator::Validator(const SSCFLSO& instance) : ref_instance(instance){
-	this->assign_rankings();
-	this->open_facilities = std::vector<int>();
-	this->solution_value = -1;
-	this->assignment = std::vector<int>(ref_instance.clients, -1);
+	this->solution = facility_vector(instance.facilities, 0);
+	this->solution_value = -1; 
+	this->assignment = client_facility_assignment(ref_instance.clients, -1);
 }
 
-void Validator::assign_rankings(){
-	int J = ref_instance.facilities;
-	int I = ref_instance.clients;
-	std::vector<int> ranks = range(J);
-	std::vector<int> clients = range(I);
-	this->rankings = std::vector<std::vector<int>>(I, std::vector<int>());
-	for(auto it = clients.begin(); it != clients.end(); it++){
-		permutated_fill(ref_instance.preferences[*it], ranks, this->rankings[*it]);
-	}
-}
-
-void Validator::set_solution(const std::vector<int>& solution){
-	this->open_facilities = solution;
-	// Determine assignment.
-	int J = this->ref_instance.facilities;
-	int I = this->ref_instance.clients;
-	std::vector<int> clients = range(I);
-	int n = this->open_facilities.size();
+void Validator::set_solution(const facility_vector& solution){
+	assert((solution.size() == this->ref_instance.facilities)); // Solution vector must be binary
+	this->solution = solution;
+	int n = count(this->solution.begin(), this->solution.end(), 1);
 	if(n == 0){
-		this->assignment = std::vector<int>(I, -1);
+		this->assignment = client_facility_assignment(this->ref_instance.clients, -1);
 		this->solution_value = -1;
 		return;
 	}
-	if(pow(n, 2) - 2*n - 1 >= J){
-		// Expected number of checks by iterating the preferences is smaller than the [deterministic] number of checks using rankings.
-		// Assumption is that the solution is chosen uniformly at random though.
-		for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
-			const std::vector<int>& ref_preferences = this->ref_instance.preferences[*client_it];
-			for(auto facility_it = ref_preferences.begin(); facility_it != ref_preferences.end(); facility_it++){
-				if(contains(this->open_facilities, *facility_it)){
-					this->assignment[*client_it] = *facility_it;
-					break;
-				}
+	// Determine assignment.
+	client_vector clients = range(this->ref_instance.clients);
+	for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
+		const facility_vector& ref_preferences = this->ref_instance.preferences[*client_it];
+		for(auto facility_it = ref_preferences.begin(); facility_it != ref_preferences.end(); facility_it++){
+			if(this->solution[*facility_it] == 1){
+				this->assignment[*client_it] = *facility_it;
+				break;
 			}
-		}
-	}
-	else{
-		for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
-			int most_preferred = this->open_facilities[0];
-			for(auto facility_it = solution.begin(); facility_it != solution.end(); facility_it++){
-				if(this->rankings[*client_it][*facility_it] < this->rankings[*client_it][most_preferred]){
-					most_preferred = *facility_it;
-				}
+			else if (this->solution[*facility_it] != 0) {
+				assert(false);
 			}
-			this->assignment[*client_it] = most_preferred;
 		}
 	}
 	// Compute objective value.
-	this->solution_value = 0;
-	for(auto it = solution.begin(); it != solution.end(); it++){
-		this->solution_value += this->ref_instance.open_costs[*it];		
-	}
+	this->solution_value = std::inner_product(solution.begin(), solution.end(), this->ref_instance.facility_costs.begin(), 0.0);
 	for(auto it = clients.begin(); it != clients.end(); it++){
 		int facility = this->assignment[*it];
-		this->solution_value += this->ref_instance.dist_costs[facility][*it];
+		this->solution_value += this->ref_instance.distribution_costs[facility][*it];
 	}
 }
 
-std::vector<int> Validator::get_assignment(){
+facility_vector Validator::get_solution() {
+	return this->solution;
+}
+
+client_facility_assignment Validator::get_assignment(){
 	return this->assignment;
 }
 
-float Validator::value(){
+double Validator::value() const{
 	return this->solution_value;
 }
 
 bool Validator::feasible(){
-	if(this->open_facilities.size() == 0){ return false; }
-	return this->violating_facilities().empty();
+	return (sum(this->solution) == 0) ? false : sum(this->exceeds_capacity()) == 0;
 }
 
-std::vector<int> Validator::violating_facilities(){
-	std::vector<int> violating_facilities = std::vector<int>();
-	std::vector<int> clients = range(this->ref_instance.clients);
-	std::vector<float> capacities = this->ref_instance.capacities;
+facility_vector Validator::exceeds_capacity(){
+	facility_vector capacity_exceeding_facilities = facility_vector(this->ref_instance.facilities, 0);
+	client_vector clients = range(this->ref_instance.clients);
+	capacity_vector capacities = this->ref_instance.capacities;
 	// Reduce each "capacity" by the assigned demands. 
 	for(auto it = clients.begin(); it != clients.end(); it++){
 		int facility = this->assignment[*it];
 		capacities[facility] -= this->ref_instance.demands[*it];
-		if(!contains(violating_facilities, facility)){
-			violating_facilities.push_back(facility);
+		if (capacities[facility] < 0) {
+			capacity_exceeding_facilities[facility] = 1;
 		}
 	}
-	std::function<bool(int)> predicate = [capacities](int facility){ return capacities[facility] < 0; };
-	filter(violating_facilities, predicate);
-	return violating_facilities;
+	return capacity_exceeding_facilities;
+}
+
+void Validator::drop_empty_facilities() {
+	if (this->solution_value == -1) { return; }
+	for (int j = 0; j < this->ref_instance.facilities; j++) {
+		if (this->solution[j] == 0) { continue; }
+		else if (this->solution[j] != 1) { assert(false); }
+		if (!contains(this->assignment, j)) {
+			// Facility is empty
+			this->solution[j] = 0;
+			this->solution_value -= this->ref_instance.facility_costs[j];
+		}
+	}
 }

@@ -1,13 +1,12 @@
 #include "local_search.h"
 
-solution local_search(const SSCFLSO& instance){
+facility_vector local_search(const SSCFLSO& instance){
 	Validator FLV = Validator(instance);
-	solution open_facilities = preprocess(instance);
+	facility_vector open_facilities = preprocess(instance);
 	std::vector<int> closed_facilities{};
 	FLV.set_solution(open_facilities);
-	int current_value = FLV.value();
+	double current_value = FLV.value();
 	while(true){
-		
 		if(add(FLV, open_facilities, closed_facilities, current_value)){ continue; }
 		if(remove(FLV, open_facilities, closed_facilities, current_value)){ continue; }
 		if(swap(FLV, open_facilities, closed_facilities, current_value)){ continue; }
@@ -16,7 +15,7 @@ solution local_search(const SSCFLSO& instance){
 	return open_facilities;
 }
 
-bool add(Validator& FLV, solution& open_facilities, std::vector<int>& closed_facilities, int& current_value){
+bool add(Validator& FLV, facility_vector& open_facilities, facility_vector& closed_facilities, double& current_value){
 	std::vector<int> tmp;
 	std::vector<int>::iterator position;
 	for(int facility : closed_facilities){
@@ -34,7 +33,7 @@ bool add(Validator& FLV, solution& open_facilities, std::vector<int>& closed_fac
 	return false;
 }
 
-bool remove(Validator& FLV, solution& open_facilities, std::vector<int>& closed_facilities, int& current_value){
+bool remove(Validator& FLV, facility_vector& open_facilities, facility_vector& closed_facilities, double& current_value){
 	std::vector<int> tmp;
 	std::vector<int>::iterator position;
 	for(int facility : open_facilities){
@@ -53,7 +52,7 @@ bool remove(Validator& FLV, solution& open_facilities, std::vector<int>& closed_
 	return false;
 }
 
-bool swap(Validator& FLV, solution& open_facilities, std::vector<int>& closed_facilities, int& current_value){
+bool swap(Validator& FLV, facility_vector& open_facilities, facility_vector& closed_facilities, double& current_value){
 	std::vector<int> tmp;
 	std::vector<int>::iterator position;
 	for(int facility_add : closed_facilities){

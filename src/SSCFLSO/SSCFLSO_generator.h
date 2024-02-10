@@ -1,12 +1,9 @@
 #ifndef GENERATOR_H
 #define GENERATOR_H
-#include "SSCFLSO.h"
+#include "../common.h"
 #include "../helpers/data_helper.h"
 #include "../helpers/random.h"
-#include <algorithm> // For sorting
-#include <fstream> // For saving and loading.
-#include <string> // For saving and loading.
-#include <iostream> // For throwing the error.
+#include "SSCFLSO.h"
 class Generator{
 	public:
 		// Cooperative: Clients want to minimize objective function.
@@ -14,10 +11,10 @@ class Generator{
 		enum Category {cooperative, linear_bias};
 
 		Generator(int J, int I);
-		void set_demand(int client, float demand);
-		void set_capacity(int facility, float capacity);
-		void set_open_cost(int facility, float open_cost);
-		void set_dist_cost(int facility, int client, float dist_cost);
+		void set_demand(int client, double demand);
+		void set_capacity(int facility, double capacity);
+		void set_facility_cost(int facility, double facility_cost);
+		void set_distribution_cost(int facility, int client, double distribution_cost);
 		/// @brief Sets the preferences by either distance or pertubated distances.
 		/// @param category determines the control flow. Currently categories 0 and 1 are available. 
 		void set_preferences(Category category);

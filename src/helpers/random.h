@@ -1,8 +1,7 @@
 #ifndef RANDOM_H
 #define RANDOM_H
-#include <random> // To get a random value
-#include <time.h> // For the seed
-#include <stdexcept> // For the runtime error
+#include "../common.h"
+#include "../helpers/data_helper.h"
 /// Get a random value in [0, 1]
 float random();
 /// @brief Draw uniformly a random number in [lower_bound, upper_bound]

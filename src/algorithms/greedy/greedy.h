@@ -7,5 +7,5 @@
  * Iteratively add those facilities of S to the solution
  * that create the lowest cost. Stop as soon as we have a feasible solution
 */
-solution greedy(const SSCFLSO& instance);
+facility_vector greedy(const SSCFLSO& instance);
 #endif

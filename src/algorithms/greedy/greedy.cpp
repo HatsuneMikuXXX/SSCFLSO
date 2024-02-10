@@ -1,16 +1,31 @@
 #include "greedy.h"
 
-solution greedy(const SSCFLSO& instance){
+facility_vector greedy(const SSCFLSO& instance){
 	Validator FLV = Validator(instance);
-	solution open_facilities{};
-	std::vector<int> closed_facilities = preprocess(instance);
+	facility_vector solution = facility_vector(instance.facilities, 0);
+
+	std::vector<int> no_unnecessary_facilities = preprocess(instance);
 	std::vector<int> tmp_facilities;
 	std::vector<int>::iterator position;
 	std::vector<std::pair<int, float>> costs;
 	auto sort_by_second = [](std::pair<int, float> pair1, std::pair<int, float> pair2){ return pair1.second < pair2.second; };
-	FLV.set_solution(open_facilities);
+
+	FLV.set_solution(solution);
 	// Open iteratively those facilities minimizes our money loss.
-	while(!FLV.feasible() && !closed_facilities.empty()){
+	while(!FLV.feasible()){
+		// Search neighborhood
+		double current_value = FLV.value();
+		std::vector<facility_vector> neighborhood = add_neighborhood(solution, no_unnecessary_facilities);
+		for (auto it = neighborhood.begin(); it != neighborhood.end(); it++) {
+			FLV.set_solution(*it);
+			if (FLV.feasible() && FLV.value() < current_value) {
+				current_value = FLV.value();
+				solution = *it; // For the next while-iteration
+				stuck_in_local_optima = false;
+			}
+		}
+		FLV.set_solution(solution);
+
 		costs = {};
 		for(int facility : closed_facilities){
 			tmp_facilities = open_facilities;
