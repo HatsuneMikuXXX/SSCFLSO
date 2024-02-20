@@ -4,4 +4,5 @@
 /// After preprocessing, remove iteratively that facility that removes the highest cost while maintaining facilities.
 /// Considerate: Empty facilities 
 facility_vector stingy(const SSCFLSO& instance);
+facility_vector biased_stingy(const SSCFLSO& instance);
 #endif

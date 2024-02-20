@@ -2,9 +2,13 @@
 namespace SSCFLSOUnitTest{
 	bool run_tests(){
 		try{
+			std::cout << "Running SSCFLSO Test 1..." << std::endl;
 			test1();
+			std::cout << "OK\nRunning SSCFLSO Test 2..." << std::endl;
 			test2();
+			std::cout << "OK\nRunning SSCFLSO Test 3..." << std::endl;
 			test3();
+			std::cout << "OK" << std::endl;
 		}
 		catch(const std::exception& e){
 			std::cerr << e.what() << std::endl;

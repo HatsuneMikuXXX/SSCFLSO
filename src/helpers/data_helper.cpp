@@ -21,7 +21,7 @@ std::vector<int> range(int n){
 bool areSame(double a, double b){
 	return fabs(a - b) < EPSILON;
 }
-bool areSame(std::vector<double>& a, std::vector<double>& b) {
+bool areSame(const std::vector<double>& a, const std::vector<double>& b) {
 	if (b.size() < a.size()) {
 		return false;
 	}
@@ -32,7 +32,7 @@ bool areSame(std::vector<double>& a, std::vector<double>& b) {
 	}
 	return a.size() == b.size();
 }
-bool areSame(std::vector<std::vector<double>>& a, std::vector<std::vector<double>>& b) {
+bool areSame(const std::vector<std::vector<double>>& a, const std::vector<std::vector<double>>& b) {
 	if (b.size() < a.size()) {
 		return false;
 	}
@@ -44,11 +44,11 @@ bool areSame(std::vector<std::vector<double>>& a, std::vector<std::vector<double
 	return a.size() == b.size();
 }
 
-int sum(std::vector<int>& a) {
+int sum(const std::vector<int>& a) {
 	return std::accumulate(a.begin(), a.end(), 0);
 }
 
-double sum(std::vector<double>& a) {
+double sum(const std::vector<double>& a) {
 	return std::accumulate(a.begin(), a.end(), 0);
 }
 
@@ -65,6 +65,14 @@ void filter(facility_vector& facilities, facility_predicate& predicate) {
 		else if (facilities[j] != 1) { assert(false); }
 		facilities[j] = predicate(j);
 	}
+}
+
+double magnitude(const std::vector<double>& v) {
+	double res = 0;
+	for (auto it = v.begin(); it != v.end(); it++) {
+		res += (*it) * (*it);
+	}
+	return sqrt(res);
 }
 
 std::string solution_to_string(const std::vector<int>& container){

@@ -2,6 +2,7 @@
 #define COMMON_H
 // Objects
 #include <vector>
+#include <map>
 #include <string> 
 #include <functional> 
 // Functions

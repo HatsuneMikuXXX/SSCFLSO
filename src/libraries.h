@@ -2,11 +2,7 @@
 #define LIBRARIES_H
 
 // Unit Tests
-#include "SSCFLSO/unit_test.h"
-#include "algorithms/unit_test.h"
-#include "algorithms/local_search/unit_test.h"
-#include "algorithms/greedy/unit_test.h"
-#include "algorithms/stingy/unit_test.h"
+#include "helpers/run_all_unit_tests.h"
 
 // Model
 #include "SSCFLSO/SSCFLSO.h"

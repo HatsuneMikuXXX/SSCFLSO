@@ -7,11 +7,11 @@
 Generator::Generator(int J, int I){
 	this->instance.facilities = J;
 	this->instance.clients = I;
-	this->instance.demands = std::vector<double>(I, 0);
-	this->instance.capacities = std::vector<double>(J, 0);
-	this->instance.facility_costs = std::vector<double>(J, 0);
-	this->instance.distribution_costs = std::vector<std::vector<double>>(J, std::vector<double>(I, 0));
-	this->instance.preferences = std::vector<std::vector<int>>(I, std::vector<int>(J, -1));
+	this->instance.demands = demand_vector(I, 0);
+	this->instance.capacities = capacity_vector(J, 0);
+	this->instance.facility_costs = facility_cost_vector(J, 0);
+	this->instance.distribution_costs = distribution_cost_matrix(J, std::vector<double>(I, 0));
+	this->instance.preferences = preference_matrix(I, std::vector<int>(J, -1));
 }
 
 void Generator::set_demand(int client, double demand){
@@ -32,12 +32,9 @@ void Generator::set_distribution_cost(int facility, int client, double distribut
 
 void Generator::set_preferences(Category category){
 	std::vector<int> clients = range(this->instance.clients);
-	std::vector<int> facilities = range(this->instance.facilities);
+	std::vector<int> facilities = range(this->instance.facilities); // Not binary!
 
-	// sort_by_second, used for sorting a vector consisting of tuples in ascending, by-second-entry order  
-	auto sort_by_second = [](std::pair<int, double> pair1, std::pair<int, double> pair2){ 
-		return (pair1.second < pair2.second); 
-	};
+
 	std::vector<std::pair<int, double>> facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
 	switch(category){
 		case cooperative:
@@ -46,9 +43,8 @@ void Generator::set_preferences(Category category){
 				facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
 				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
 					double dist = this->instance.distribution_costs[*facility_it][*client_it];
-					facility_distribution_cost_pairs.push_back(std::pair<int, double>(*facility_it, dist));
+					bisect_insert(facility_distribution_cost_pairs, std::pair<int, double>(*facility_it, dist), sort_by_second);
 				}
-				sort(facility_distribution_cost_pairs.begin(), facility_distribution_cost_pairs.end(), sort_by_second);
 				this->instance.preferences[*client_it] = get_firsts<int, double>(facility_distribution_cost_pairs);
 			}
 			return;
@@ -73,9 +69,8 @@ void Generator::set_preferences(Category category){
 				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
 					double true_cost = this->instance.distribution_costs[*facility_it][*client_it];
 					double dist = triangular(min_dist_of_client, max_dist_of_client, true_cost);
-					facility_distribution_cost_pairs.push_back(std::pair<int, double>(*facility_it, dist));
+					bisect_insert(facility_distribution_cost_pairs, std::pair<int, double>(*facility_it, dist), sort_by_second);
 				}
-				sort(facility_distribution_cost_pairs.begin(), facility_distribution_cost_pairs.end(), sort_by_second);
 				this->instance.preferences[*client_it] = get_firsts<int, double>(facility_distribution_cost_pairs);
 			}
 			return;
@@ -195,14 +190,12 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 	// Preferences
 	if(!preferences_included){
 		// Create preferences using the data - cooperative
-		auto sort_by_second = [](std::pair<int, double> pair1, std::pair<int, double> pair2){ return (pair1.second < pair2.second); };
 		for(int client = 0; client < I; client++){
 			std::vector<std::pair<int, double>> facility_dist_pairs = std::vector<std::pair<int, double>>();
 			for(int facility = 0; facility < J; facility++){
 				double dist = instance.distribution_costs[facility][client];
-				facility_dist_pairs.push_back(std::pair<int, double>(facility, dist));
+				bisect_insert(facility_dist_pairs, std::pair<int, double>(facility, dist), sort_by_second);
 			}
-			sort(facility_dist_pairs.begin(), facility_dist_pairs.end(), sort_by_second);
 			instance.preferences.push_back(get_firsts<int, double>(facility_dist_pairs)); 
 		}
 	}

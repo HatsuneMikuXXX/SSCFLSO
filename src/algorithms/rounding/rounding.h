@@ -1,5 +1,6 @@
 #ifndef ROUNDING_H
 #define ROUNDING_H
 #include "../algorithm.h"
-std::vector<int> rounding(const SSCFLSO& instance);
+#include "../SSCFLSO_gurobi.h"
+facility_vector rounding(const SSCFLSO& instance);
 #endif

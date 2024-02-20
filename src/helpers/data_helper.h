@@ -4,10 +4,13 @@
 #include "../constants.h"
 #include "../typedefinitions.h"
 #include "data_helper_impl.h"
+std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> sort_by_second = [](const std::pair<int, double>& pair1, const std::pair<int, double>& pair2) {
+	return (pair1.second < pair2.second);
+};
 /// Return "`x` is element of `container`"
 template<typename T>
 bool contains(const std::vector<T>& container, const T& x);
-/// Inverse index set, example: [3,0,1,4,5,2,6] becomes []
+/// Inverse index set, example: [3,0,1,4,5,2,6] becomes [1,2,5,0,3,4,6]
 std::vector<int> inverse(const std::vector<int> set);
 /// @brief Get a vector.
 /// @param n Size of the vector
@@ -25,13 +28,19 @@ std::vector<T1> get_firsts(const std::vector<std::pair<T1, T2>>& pairs);
 /// @param b 
 /// @return 
 bool areSame(double a, double b);
-bool areSame(std::vector<double>& a, std::vector<double>& b);
-bool areSame(std::vector<std::vector<double>>& a, std::vector<std::vector<double>>& b);
+bool areSame(const std::vector<double>& a, const std::vector<double>& b);
+bool areSame(const std::vector<std::vector<double>>& a, const std::vector<std::vector<double>>& b);
 
-int sum(std::vector<int>& a);
-double sum(std::vector<double>& a);
+int sum(const std::vector<int>& a);
+double sum(const std::vector<double>& a);
 
-int hamming_distance(facility_vector& a, facility_vector& b);
+int hamming_distance(const facility_vector& a, const facility_vector& b);
+
+template<typename T>
+void bisect_insert(std::vector<T>& container, const T& x, std::function<bool(T, T)> comes_before);
+
+double magnitude(const std::vector<double>& v);
+
 /// @brief Returns the string representation of a vector, that is [v1,v2,...]
 /// @param  
 /// @return 

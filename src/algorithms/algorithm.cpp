@@ -1,7 +1,7 @@
 #include "algorithm.h"
 
 
-std::vector<facility_vector> add_neighborhood(facility_vector& x, facility_vector& preprocessed) {
+std::vector<facility_vector> add_neighborhood(const facility_vector& x, const facility_vector& preprocessed) {
 	std::vector<facility_vector> res = {};
 	facility_vector neighbor;
 	for (int i = 0; i < x.size(); i++) {
@@ -14,7 +14,7 @@ std::vector<facility_vector> add_neighborhood(facility_vector& x, facility_vecto
 	return res;
 }
 
-std::vector<facility_vector> remove_neighborhood(facility_vector& x) {
+std::vector<facility_vector> remove_neighborhood(const facility_vector& x) {
 	std::vector<facility_vector> res = {};
 	facility_vector neighbor;
 	for (int i = 0; i < x.size(); i++) {
@@ -27,7 +27,7 @@ std::vector<facility_vector> remove_neighborhood(facility_vector& x) {
 	return res;
 }
 
-std::vector<facility_vector> swap_neighborhood(facility_vector& x, facility_vector& preprocessed) {
+std::vector<facility_vector> swap_neighborhood(const facility_vector& x, const facility_vector& preprocessed) {
 	std::vector<facility_vector> res = {};
 	facility_vector neighbor;
 	for (int i = 0; i < x.size(); i++) {

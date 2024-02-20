@@ -5,5 +5,5 @@
  * We therefore assume that two floating point numbers `a` and `b` are equal if
  * |`a` - `b`| < `EPSILON`.
 */
-const double EPSILON = 0.000001;
+const double EPSILON = 10e-7;
 #endif

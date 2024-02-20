@@ -10,4 +10,10 @@ void run(const std::vector<std::pair<std::string, algorithm>>& algorithms,
 	float max_run_time, 
 	bool preferences_included = true, 
 	int precision = 4);
+
+
+// To Retrieve
+// TIME, VALUE, Solution
+// To compute
+// Gap, Hamming Distance, Number of facilities
 #endif

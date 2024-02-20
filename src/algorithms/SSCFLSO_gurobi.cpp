@@ -1,7 +1,7 @@
 #include "SSCFLSO_gurobi.h"
 
-std::vector<float> solve(const SSCFLSO& instance){
-	std::vector<float> res = std::vector<float>();
+relaxed_solution solve(const SSCFLSO& instance){
+	relaxed_solution res = relaxed_solution();
 	GRBEnv* env = 0;
 	GRBVar* open = 0;
 	GRBVar** distribution = 0;
@@ -76,25 +76,16 @@ std::vector<float> solve(const SSCFLSO& instance){
 			}
 		}
 		model.optimize();
-		std::cout << "\nTOTAL COSTS: " << model.get(GRB_DoubleAttr_ObjVal) << std::endl;
-		std::cout << "SOLUTION:" << std::endl;
-		for(int j = 0; j < m; j++){
-			if(open[j].get(GRB_DoubleAttr_X) > 0){
-				res.push_back(j);
-				std::cout << "Facility " << j << ": ";
-				std::cout << open[j].get(GRB_DoubleAttr_X) << std::endl;
-				for(int i = 0; i < n; i++){
-					if(distribution[j][i].get(GRB_DoubleAttr_X) > 0){
-						std::cout << "Client " << i << ": ";
-						std::cout << distribution[j][i].get(GRB_DoubleAttr_X) << std::endl;
-					}
-				}
+		for (int j = 0; j < m; j++) {
+			res.rFacility_vector.push_back(open[j].get(GRB_DoubleAttr_X));
+			res.rFacilityClient_vector[j] = {};
+			for (int i = 0; i < n; i++) {
+				res.rFacilityClient_vector[j].push_back(distribution[j][i].get(GRB_DoubleAttr_X));
 			}
 		}
 	}
 	catch(std::exception e){
 		std::cerr << "Something went wrong:\n" << e.what() << std::endl;
 	}
-	
 	return res;
 }
