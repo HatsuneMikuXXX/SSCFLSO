@@ -2,7 +2,7 @@
 #define GREEDY_UNIT_TEST_H
 #include "greedy.h"
 #include "../../SSCFLSO/SSCFLSO_generator.h"
-namespace GreedyUnitTest{
+namespace GreedyUnitTest {
 	bool run_tests();
 	void test1();
 }

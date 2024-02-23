@@ -1,27 +1,27 @@
 #include "unit_test.h"
-namespace GreedyUnitTest {
-	bool run_tests() {
-		try {
-			std::cout << "Running Greedy Test 1..." << std::endl;
+namespace GreedyPopUnitTest{
+	bool run_tests(){
+		try{
+			std::cout << "Running Greedy Pop Test 1..." << std::endl;
 			test1();
 			std::cout << "OK" << std::endl;
 		}
-		catch (const std::exception& e) {
+		catch(const std::exception& e){
 			std::cerr << e.what() << std::endl;
 			return false;
 		}
 		return true;
 	}
-
-	void test1() {
+	
+	void test1(){
 		SSCFLSO instance = Generator::load_instance("instances/unit_tests/unit_test_infeasible0.plc");
 		facility_vector res;
-		Greedy::solve(instance, res, TWO_MINUTES);
+		GreedyPop::solve(instance, res, TWO_MINUTES);
 		if (sum(res) > 0) {
-			throw std::runtime_error("Solution space is empty but Greedy returned a feasible solution");
+			throw std::runtime_error("Solution space is empty but Greedy Pop returned a feasible solution");
 		}
 		instance = Generator::load_instance("instances/unit_tests/unit_test_small.plc");
-		Greedy::solve(instance, res, TWO_MINUTES);
+		GreedyPop::solve(instance, res, TWO_MINUTES);
 		if (!(sum(res) == 2 && res[0] == 1 && res[1] == 1)) {
 			throw std::runtime_error("The returned solution should be of size 2 and contain at least the facilities 1 and 2.");
 		}

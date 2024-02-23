@@ -8,6 +8,8 @@ namespace SSCFLSOUnitTest{
 			test2();
 			std::cout << "OK\nRunning SSCFLSO Test 3..." << std::endl;
 			test3();
+			std::cout << "OK\nRunning SSCFLSO Test 4..." << std::endl;
+			test4();
 			std::cout << "OK" << std::endl;
 		}
 		catch(const std::exception& e){
@@ -72,8 +74,8 @@ namespace SSCFLSOUnitTest{
 		}
 		x.set_preferences(Generator::Category::cooperative);
 		SSCFLSO y = x.get_instance();
-		x.save_instance(y, "src/SSCFLSO/unit_test0.plc", true);
-		y = x.load_instance("src/SSCFLSO/unit_test0.plc");
+		x.save_instance(y, "instances/unit_tests/unit_test_SSCFLSO.plc", true);
+		y = x.load_instance("instances/unit_tests/unit_test_SSCFLSO.plc");
 		bool c1 = areSame(y.demands, demands);
 		bool c2 = areSame(y.capacities, capacities); 
 		bool c3 = areSame(y.facility_costs, facility_costs); 
@@ -83,8 +85,8 @@ namespace SSCFLSOUnitTest{
 		}
 		x.set_demand(0, 5000);
 		y = x.get_instance();
-		x.save_instance(y, "src/SSCFLSO/unit_test0.plc", false);
-		y = x.load_instance("src/SSCFLSO/unit_test0.plc");
+		x.save_instance(y, "instances/unit_tests/unit_test_SSCFLSO.plc", false);
+		y = x.load_instance("instances/unit_tests/unit_test_SSCFLSO.plc");
 		bool d1 = areSame(y.demands[0], 1.25);
 		if(!d1){
 			throw std::runtime_error("File was overwritten but shouldn't!");
@@ -92,7 +94,7 @@ namespace SSCFLSOUnitTest{
 	}
 
 	void test3(){
-		SSCFLSO y = Generator::load_instance("src/SSCFLSO/unit_test0.plc");
+		SSCFLSO y = Generator::load_instance("instances/unit_tests/unit_test_SSCFLSO.plc");
 		Validator FLV = Validator(y);
 		FLV.set_solution({1, 0, 0});
 		bool assign1 = FLV.get_assignment() == client_facility_assignment{0, 0, 0};
@@ -122,6 +124,16 @@ namespace SSCFLSOUnitTest{
 		}
 		if(!violation2){
 			throw std::runtime_error("Facilities that violate capacity limits computed wrongly!");
+		}
+	}
+
+	void test4() {
+		SSCFLSO y = Generator::load_instance("instances/unit_tests/unit_test_dropEmptyTest.plc");
+		Validator FLV = Validator(y);
+		FLV.set_solution({1, 1});
+		FLV.drop_empty_facilities();
+		if (FLV.get_solution() != facility_vector{ 1, 0 }) {
+			throw std::runtime_error("Dropping empty facilities failed!");
 		}
 	}
 }

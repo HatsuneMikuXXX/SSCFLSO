@@ -13,7 +13,7 @@ void run(const std::vector<std::pair<std::string, algorithm>>& algorithms,
 
 
 // To Retrieve
-// TIME, VALUE, Solution
+// Each algorithm, each instance: TIME, VALUE, Solution
 // To compute
 // Gap, Hamming Distance, Number of facilities
 #endif

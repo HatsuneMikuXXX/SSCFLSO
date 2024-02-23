@@ -1,0 +1,7 @@
+Algorithm Information
+Name: Stingy
+Idea: 
+	Remove facility that causes greatest utility (cost savings) increase. 
+	Repeat until no utility gain is possible.
+Parameters: None.
+### END OF INFORMATION ###

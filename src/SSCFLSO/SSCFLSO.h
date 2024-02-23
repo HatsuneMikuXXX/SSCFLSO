@@ -3,8 +3,8 @@
 #include "../common.h"
 #include "../typedefinitions.h"
 struct SSCFLSO {
-	int facilities = 0; // Number of facilities. Identifiers zero-based.
-	int clients = 0; // Number of clients. Identifiers zero-based.
+	int facilities = 0; // Number of facilities = |J|. Identifiers zero-based.
+	int clients = 0; // Number of clients = |I|. Identifiers zero-based.
 	demand_vector demands = demand_vector(); // Size |I|.
 	capacity_vector capacities = capacity_vector(); // Size |J|.
 	facility_cost_vector facility_costs = facility_cost_vector(); // Size |J|. Cost to open a facility.

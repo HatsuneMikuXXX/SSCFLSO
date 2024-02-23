@@ -1,9 +1,9 @@
 #include "data_helper.h"
 
-std::vector<int> inverse(const std::vector<int> set){
-	std::vector<int> res = std::vector<int>(set.size(), 0);
+std::vector<int> inverse(const std::vector<int>& index_set){
+	std::vector<int> res = std::vector<int>(index_set.size(), 0);
 	int i = 0;
-	for(auto it = set.begin(); it != set.end(); it++){
+	for(auto it = index_set.begin(); it != index_set.end(); it++){
 		res[*it] = i;
 		i++;
 	}
@@ -18,11 +18,19 @@ std::vector<int> range(int n){
 	return res;
 }
 
+void filter(facility_vector& facilities, const facility_predicate& predicate) {
+	for (int j = 0; j < facilities.size(); j++) {
+		if (facilities[j] == 0) { continue; }
+		else if (facilities[j] != 1) { assert(false); }
+		facilities[j] = predicate(j);
+	}
+}
+
 bool areSame(double a, double b){
 	return fabs(a - b) < EPSILON;
 }
 bool areSame(const std::vector<double>& a, const std::vector<double>& b) {
-	if (b.size() < a.size()) {
+	if (b.size() != a.size()) {
 		return false;
 	}
 	for (int i = 0; i < a.size(); i++) {
@@ -30,10 +38,10 @@ bool areSame(const std::vector<double>& a, const std::vector<double>& b) {
 			return false;
 		}
 	}
-	return a.size() == b.size();
+	return true;
 }
 bool areSame(const std::vector<std::vector<double>>& a, const std::vector<std::vector<double>>& b) {
-	if (b.size() < a.size()) {
+	if (b.size() != a.size()) {
 		return false;
 	}
 	for (int i = 0; i < a.size(); i++) {
@@ -41,7 +49,7 @@ bool areSame(const std::vector<std::vector<double>>& a, const std::vector<std::v
 			return false;
 		}
 	}
-	return a.size() == b.size();
+	return true;
 }
 
 int sum(const std::vector<int>& a) {
@@ -59,36 +67,10 @@ int hamming_distance(facility_vector& a, facility_vector& b) {
 	return std::accumulate(c.begin(), c.end(), 0);
 }
 
-void filter(facility_vector& facilities, facility_predicate& predicate) {
-	for (int j = 0; j < facilities.size(); j++) {
-		if (facilities[j] == 0) { continue; }
-		else if (facilities[j] != 1) { assert(false); }
-		facilities[j] = predicate(j);
-	}
-}
-
 double magnitude(const std::vector<double>& v) {
 	double res = 0;
 	for (auto it = v.begin(); it != v.end(); it++) {
 		res += (*it) * (*it);
 	}
 	return sqrt(res);
-}
-
-std::string solution_to_string(const std::vector<int>& container){
-	std::string res = "[";
-	for(int entry : container){
-		res += std::to_string(entry) + ", ";
-	}
-	res = res.substr(0, res.size() - 2) + "]";
-	return res;
-}
-
-std::string solution_to_string(const std::vector<double>& container){
-	std::string res = "[";
-	for(float entry : container){
-		res += std::to_string(entry) + ", ";
-	}
-	res = res.substr(0, res.size() - 2) + "]";
-	return res;
 }

@@ -7,6 +7,8 @@ namespace TESTER {
 		PreprocessUnitTest::run_tests();
 		StingyUnitTest::run_tests();
 		GreedyUnitTest::run_tests();
+		LocalSearchUnitTest::run_tests();
+		RoundingUnitTest::run_tests();
 		std::cout << "All Tests Passed." << std::endl;
 		return true;
 	}

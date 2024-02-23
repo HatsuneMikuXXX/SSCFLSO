@@ -1,6 +1,6 @@
 #ifndef PREPROCESS_UNIT_TEST_H
 #define PREPROCESS_UNIT_TEST_H
-#include "preprocess.h"
+#include "algorithmClass.h"
 #include "../SSCFLSO/SSCFLSO_generator.h"
 namespace PreprocessUnitTest{
 	/// @brief Run all tests.

@@ -1,5 +1,5 @@
-#ifndef GREEDY_H
-#define GREEDY_H
+#ifndef GREEDY_POP_H
+#define GREEDY_POP_H
 #include "../algorithmClass.h"
 /**
  * Utility is computed in the following way:
@@ -11,11 +11,13 @@
  * Then, x linearly decreases.
  * The utility is thus: capacity_j / [ facility_cost_j + (sum_I adjusted distribution costs) ]
 */
-class Greedy : public Algorithm {
+class GreedyPop : public Algorithm {
 public:
 	static void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit);
 	static std::string meta_information();
 private:
-	static std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities);
+	static std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities, bool popularity);
 };
+facility_vector greedy_with_popularity(const SSCFLSO& instance);
+facility_vector greedy_without_popularity(const SSCFLSO& instance);
 #endif

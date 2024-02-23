@@ -16,5 +16,8 @@ namespace SSCFLSOUnitTest{
 
 	/// @brief Checks validation, assignments, computed costs, and concrete violations (i.e. which facilities). 
 	void test3();
+
+	/// @brief Checks if dropping facilities works correctly
+	void test4();
 }
 #endif

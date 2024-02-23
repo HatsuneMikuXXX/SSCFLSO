@@ -6,7 +6,7 @@ bool contains(const std::vector<T>& container, const T& x){
 }
 
 template<typename T1, typename T2>
-std::vector<T1> get_firsts(const std::vector<std::pair<T1, T2>>& pairs){
+std::vector<T1> projection_1_2(const std::vector<std::pair<T1, T2>>& pairs){
 	std::vector<T1> filtered;
 	auto lambda = [](std::pair<T1, T2> pair){ return pair.first; };
 	transform(pairs.begin(), pairs.end(), back_inserter(filtered), lambda);
@@ -14,7 +14,7 @@ std::vector<T1> get_firsts(const std::vector<std::pair<T1, T2>>& pairs){
 }
 
 template<typename T>
-void bisect_insert(std::vector<T>& container, const T& x, std::function<bool(T, T)> comes_before) {
+void bisect_insert(std::vector<T>& container, const T& x, const std::function<bool(T, T)>& comes_before) {
 	// Initial case
 	if (container.size() == 0) {
 		container.push_back(x);
@@ -31,6 +31,7 @@ void bisect_insert(std::vector<T>& container, const T& x, std::function<bool(T, 
 		}
 		else {
 			index += (index == container.size() - 1) ? 0 : step;
+			assert(index < container.size());
 		}
 	}
 	// Last comparison for insertion

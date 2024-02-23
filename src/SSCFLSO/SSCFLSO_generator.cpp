@@ -14,49 +14,31 @@ Generator::Generator(int J, int I){
 	this->instance.preferences = preference_matrix(I, std::vector<int>(J, -1));
 }
 
-void Generator::set_demand(int client, double demand){
-	this->instance.demands[client] = demand;
-}
-
-void Generator::set_capacity(int facility, double capacity){
-	this->instance.capacities[facility] = capacity;
-}
-
-void Generator::set_facility_cost(int facility, double facility_cost){
-	this->instance.facility_costs[facility] = facility_cost;
-}
-
-void Generator::set_distribution_cost(int facility, int client, double distribution_cost){
-	this->instance.distribution_costs[facility][client] = distribution_cost;
-}
-
 void Generator::set_preferences(Category category){
-	std::vector<int> clients = range(this->instance.clients);
-	std::vector<int> facilities = range(this->instance.facilities); // Not binary!
+	// Sort facilities by the preference order
+	std::vector<std::pair<int, double>> facility_distribution_cost_pairs;
 
-
-	std::vector<std::pair<int, double>> facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
 	switch(category){
 		case cooperative:
 			// Preferences = Shortest distance is most preferred
-			for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
+			for (int i = 0; i < instance.clients; i++) {
 				facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
-				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
-					double dist = this->instance.distribution_costs[*facility_it][*client_it];
-					bisect_insert(facility_distribution_cost_pairs, std::pair<int, double>(*facility_it, dist), sort_by_second);
+				for (int j = 0; j < instance.facilities; j++) {
+					double dist = this->instance.distribution_costs[j][i];
+					bisect_insert(facility_distribution_cost_pairs, std::pair<int, double>(j, dist), sort_by_second);
 				}
-				this->instance.preferences[*client_it] = get_firsts<int, double>(facility_distribution_cost_pairs);
+				this->instance.preferences[i] = projection_1_2<int, double>(facility_distribution_cost_pairs);
 			}
 			return;
-
 		case linear_bias:
 			// Preference = Pertubated distance (draw from triangular distribution)
-			for(auto client_it = clients.begin(); client_it != clients.end(); client_it++){
-				double min_dist_of_client = this->instance.distribution_costs[0][*client_it];
-				double max_dist_of_client = this->instance.distribution_costs[0][*client_it];
+			for (int i = 0; i < instance.clients; i++) {
+				// Initial values, they are adjusted in the loop later
+				double min_dist_of_client = this->instance.distribution_costs[0][i];
+				double max_dist_of_client = this->instance.distribution_costs[0][i];
 				// Compute minimum and maximum dist cost of client
-				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
-					double next_dist_costs = this->instance.distribution_costs[*facility_it][*client_it];
+				for (int j = 1; j < instance.facilities; j++) {
+					double next_dist_costs = this->instance.distribution_costs[j][i];
 					if(min_dist_of_client > next_dist_costs){
 						min_dist_of_client = next_dist_costs;
 					}
@@ -66,12 +48,12 @@ void Generator::set_preferences(Category category){
 				}
 				facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
 				// Use minimum and maximum as well as the true distance to draw fake costs from a triangular distribution
-				for(auto facility_it = facilities.begin(); facility_it != facilities.end(); facility_it++){
-					double true_cost = this->instance.distribution_costs[*facility_it][*client_it];
+				for (int j = 0; j < instance.facilities; j++) {
+					double true_cost = this->instance.distribution_costs[j][i];
 					double dist = triangular(min_dist_of_client, max_dist_of_client, true_cost);
-					bisect_insert(facility_distribution_cost_pairs, std::pair<int, double>(*facility_it, dist), sort_by_second);
+					bisect_insert(facility_distribution_cost_pairs, std::pair<int, double>(j, dist), sort_by_second);
 				}
-				this->instance.preferences[*client_it] = get_firsts<int, double>(facility_distribution_cost_pairs);
+				this->instance.preferences[i] = projection_1_2<int, double>(facility_distribution_cost_pairs);
 			}
 			return;
 		default:
@@ -79,9 +61,7 @@ void Generator::set_preferences(Category category){
 	}
 }
 
-SSCFLSO Generator::get_instance(){
-	return this->instance;
-}
+
 
 void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& filename, bool overwrite){
 	// Check if we can write the file in the first place.
@@ -94,6 +74,7 @@ void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& fi
 		}
 		file.close();
 	}
+	// Put data into the corresponding strings
 	int J = ref_instance.facilities;
 	int I = ref_instance.clients;
 	std::string line1 = std::to_string(J) + "\t" + std::to_string(I);
@@ -136,12 +117,12 @@ void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& fi
 	out.close();
 }
 
-SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_included){
+SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_included, Category category){
 	std::ifstream file(filename);
 	if(!file){
-		throw std::runtime_error("Load failed. Cannot find file: " + filename);
+		throw std::runtime_error("SSCFLSO Generator: Load failed. Cannot find file: " + filename);
 	}
-	// Parse data - Extract numbers (including `.` for doubleing points) only.
+	// Parse data - Extract numbers (including `.` for floating points) only.
 	char current_character;
 	std::string symbol = "";
 	std::vector<double> data = std::vector<double>();
@@ -156,48 +137,47 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 			symbol = "";
 		}
 	}
-	// Construct solution
-	SSCFLSO instance;
-	int index = 2;
+	// Construct instance
+	
+	
 	int J = int(data[0]);
 	int I = int(data[1]);
-	instance.facilities = J;
-	instance.clients = I;
+	Generator res(J, I);
+	int counter = 0;
+	int index = 2;
 	// Demands
 	for(int access = index; access < index + I; access++){
-		instance.demands.push_back(data[access]);
+		res.set_demand(counter, data[access]);
+		counter++;
 	}
+	counter = 0;
 	index += I;
 	// Capacities
 	for(int access = index; access < index + J; access++){
-		instance.capacities.push_back(data[access]);
+		res.set_capacity(counter, data[access]);
+		counter++;
 	}
+	counter = 0;
 	index += J;
 	// Open costs
 	for(int access = index; access < index + J; access++){
-		instance.facility_costs.push_back(data[access]);
+		res.set_facility_cost(counter, data[access]);
+		counter++;
 	}
+	counter = 0;
 	index += J;
 	// Distribution costs
 	for(int facility = 0; facility < J; facility++){
-		std::vector<double> dist_costs_of_facility = std::vector<double>();
 		for(int access = (index + facility * I); access < (index + (facility + 1) * I); access++){
-			dist_costs_of_facility.push_back(data[access]);
+			res.set_distribution_cost(facility, counter, data[access]);
+			counter++;
 		}
-		instance.distribution_costs.push_back(dist_costs_of_facility);
+		counter = 0;
 	}
 	index += J * I;
 	// Preferences
 	if(!preferences_included){
-		// Create preferences using the data - cooperative
-		for(int client = 0; client < I; client++){
-			std::vector<std::pair<int, double>> facility_dist_pairs = std::vector<std::pair<int, double>>();
-			for(int facility = 0; facility < J; facility++){
-				double dist = instance.distribution_costs[facility][client];
-				bisect_insert(facility_dist_pairs, std::pair<int, double>(facility, dist), sort_by_second);
-			}
-			instance.preferences.push_back(get_firsts<int, double>(facility_dist_pairs)); 
-		}
+		res.set_preferences(category);
 	}
 	else{
 		// Read in given preferences
@@ -207,10 +187,10 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 			for(int access = (index + client * J); access < (index + (client + 1) * J); access++){
 				preferences_of_client.push_back(data[access]);
 			}
-			instance.preferences.push_back(preferences_of_client);
+			res.instance.preferences.push_back(preferences_of_client);
 		}
 	}
-	return instance;
+	return res.instance;
 }
 
 void Generator::i300(const std::string& filename){
@@ -253,8 +233,28 @@ void Generator::i300(const std::string& filename){
 		this->instance.capacities[facility] = capacity;
 		this->instance.facility_costs[facility] = uniform(0, 90) + uniform(100, 110) * sqrt(capacity);
 	}
-	this->set_preferences(cooperative);
 	if(!filename.empty()){
 		this->save_instance(this->instance, filename, true);
 	}
+}
+
+// Setter and Getter
+void Generator::set_demand(int client, double demand) {
+	this->instance.demands[client] = demand;
+}
+
+void Generator::set_capacity(int facility, double capacity) {
+	this->instance.capacities[facility] = capacity;
+}
+
+void Generator::set_facility_cost(int facility, double facility_cost) {
+	this->instance.facility_costs[facility] = facility_cost;
+}
+
+void Generator::set_distribution_cost(int facility, int client, double distribution_cost) {
+	this->instance.distribution_costs[facility][client] = distribution_cost;
+}
+
+SSCFLSO Generator::get_instance() {
+	return this->instance;
 }

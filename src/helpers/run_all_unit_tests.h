@@ -4,6 +4,8 @@
 #include "../algorithms/unit_test.h"
 #include "../algorithms/stingy/unit_test.h"
 #include "../algorithms/greedy/unit_test.h"
+#include "../algorithms/rounding/unit_test.h"
+#include "../algorithms/greedy_pop/unit_test.h"
 #include "../algorithms/local_search/unit_test.h"
 
 namespace TESTER {

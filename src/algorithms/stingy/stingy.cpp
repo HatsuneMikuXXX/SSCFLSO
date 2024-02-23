@@ -1,76 +1,42 @@
 #include "stingy.h"
-
-std::vector<facility_vector> remove_neighborhood(facility_vector& x);
-
-facility_vector stingy(const SSCFLSO& instance){
-	Validator FLV = Validator(instance);
-	facility_vector solution = preprocess(instance);
-	FLV.set_solution(solution);
-	bool stuck_in_local_optima = false;
-	while(!stuck_in_local_optima){
-		stuck_in_local_optima = true;
-		// Search neighborhood
-		double current_value = FLV.value();
-		std::vector<facility_vector> neighborhood = remove_neighborhood(solution);
-		for (auto it = neighborhood.begin(); it != neighborhood.end(); it++) {
-			FLV.set_solution(*it);
-			if (FLV.feasible() && FLV.value() < current_value) {
-				current_value = FLV.value();
-				solution = *it; // For the next while-iteration
-				stuck_in_local_optima = false;
-			}
-		}
-		FLV.set_solution(solution);
-	}
-	return solution;
-}
-
-facility_vector biased_stingy(const SSCFLSO& instance) {
-	Validator FLV = Validator(instance);
-	facility_vector solution = preprocess(instance);
-	FLV.set_solution(solution);
-	bool stuck_in_local_optima = false;
-	while (!stuck_in_local_optima) {
-		stuck_in_local_optima = true;
-		// Get neighborhood and split it into two 
-		std::vector<facility_vector> neighborhood_prio1 = {};
-		std::vector<facility_vector> neighborhood_prio2 = {};
-		client_facility_assignment assignment = FLV.get_assignment();
-		for (int j = 0; j < instance.facilities; j++) {
-			if (solution[j] == 0) { continue; }
-			facility_vector neighbor = solution;
-			neighbor[j] = 0;
-			if (contains(assignment, j)) {
-				neighborhood_prio1.push_back(neighbor);
-			}
-			else {
-				neighborhood_prio2.push_back(neighbor);
-			}
-		}
-		// Search neighborhood 1 first
-		bool stuck_in_neighborhood1 = true;
-		double current_value = FLV.value();
-		for (auto it = neighborhood_prio1.begin(); it != neighborhood_prio1.end(); it++) {
-			FLV.set_solution(*it);
-			if (FLV.feasible() && FLV.value() < current_value) {
-				current_value = FLV.value();
-				solution = *it; // For the next while-iteration
-				stuck_in_local_optima = false;
-				stuck_in_neighborhood1 = false;
-			}
-		}
-		// Search neighborhood 2 if first search was fruitless
-		if (stuck_in_neighborhood1) {
-			for (auto it = neighborhood_prio2.begin(); it != neighborhood_prio2.end(); it++) {
-				FLV.set_solution(*it);
+class Stingy : public Algorithm {
+	static void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit) {
+		auto start = start_timer();
+		Validator FLV = Validator(instance);
+		facility_vector solution = preprocess(instance);
+		current_best = solution; // In case preprocessed solution is already at a local optima
+		bool stuck_in_local_optima = false;
+		while (!stuck_in_local_optima) {
+			stuck_in_local_optima = true;
+			// Search neighborhood
+			FLV.set_solution(solution);
+			double current_value = FLV.value();
+			std::vector<facility_vector> neighborhood = remove_neighborhood(solution);
+			for (auto neighbor = neighborhood.begin(); neighbor != neighborhood.end(); neighbor++) {
+				FLV.set_solution(*neighbor);
 				if (FLV.feasible() && FLV.value() < current_value) {
 					current_value = FLV.value();
-					solution = *it; // For the next while-iteration
+					solution = *neighbor; // For the next while-iteration
 					stuck_in_local_optima = false;
 				}
 			}
+			if (!within_time_limit(start, time_limit)) {
+				return;
+			}
+			else {
+				current_best = solution;
+			}
 		}
-		FLV.set_solution(solution);
 	}
-	return solution;
-}
+
+	static std::string meta_information() {
+		std::ifstream file(PATH + "stingy/stingy.txt");
+		if (file) {
+			std::string content((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
+			return content;
+		}
+		else {
+			throw std::runtime_error("Stingy information file not found.");
+		}
+	}
+};

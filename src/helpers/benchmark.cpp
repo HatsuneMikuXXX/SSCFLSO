@@ -1,12 +1,13 @@
 #include "benchmark.h"
 
 void run(const std::vector<std::pair<std::string, algorithm>>& algorithms, 
+	
 	const std::vector<std::string>& instances, 
 	const std::string& save_location, 
 	float max_run_time, 
 	bool preferences_included, 
 	int precision)
-	{
+	{/*
 	try{
 	std::vector<int> solution;
 	float solution_value;
@@ -33,5 +34,5 @@ void run(const std::vector<std::pair<std::string, algorithm>>& algorithms,
 	}
 	catch(const std::runtime_error& e){
 		std::cerr << e.what() << std::endl;
-	}
+	}*/
 }
