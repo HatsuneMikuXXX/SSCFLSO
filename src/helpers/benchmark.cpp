@@ -1,5 +1,5 @@
 #include "benchmark.h"
-
+/*
 void run(const std::vector<std::pair<std::string, algorithm>>& algorithms, 
 	
 	const std::vector<std::string>& instances, 
@@ -34,5 +34,5 @@ void run(const std::vector<std::pair<std::string, algorithm>>& algorithms,
 	}
 	catch(const std::runtime_error& e){
 		std::cerr << e.what() << std::endl;
-	}*/
-}
+	}
+}*/

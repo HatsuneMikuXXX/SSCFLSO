@@ -3,15 +3,9 @@
 #include "../common.h"
 #include "../constants.h"
 #include "../typedefinitions.h"
-#include "data_helper_impl.h"
 
-std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> sort_by_first = [](const std::pair<int, double>& pair1, const std::pair<int, double>& pair2) {
-	return (pair1.first < pair2.first);
-};
-
-std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> sort_by_second = [](const std::pair<int, double>& pair1, const std::pair<int, double>& pair2) {
-	return (pair1.second < pair2.second);
-};
+extern const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> sort_by_first;
+extern const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> sort_by_second;
 
 /// Inverse index set, example: [3,0,1,4,5,2,6] becomes [1,2,5,0,3,4,6]
 std::vector<int> inverse(const std::vector<int>& index_set);
@@ -38,4 +32,6 @@ std::vector<T1> projection_1_2(const std::vector<std::pair<T1, T2>>& pairs);
 
 template<typename T>
 void bisect_insert(std::vector<T>& container, const T& x, const std::function<bool(const T&, const T&)>& comes_before);
+
+#include "data_helper_impl.h"
 #endif

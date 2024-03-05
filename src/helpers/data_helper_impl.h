@@ -14,35 +14,18 @@ std::vector<T1> projection_1_2(const std::vector<std::pair<T1, T2>>& pairs){
 }
 
 template<typename T>
-void bisect_insert(std::vector<T>& container, const T& x, const std::function<bool(T, T)>& comes_before) {
-	// Initial case
-	if (container.size() == 0) {
-		container.push_back(x);
-		return;
-	}
-	// General case - We need at least n comparisons where |container| < 2^n
-	int index = (container.size() - 1)/ 2; // Note: CPP always rounds down
-	// First n-1 comparisons for finding the last index
-	int step = container.size() / 2;
-	for (int loops = 1; 2 * loops <= container.size(); loops *= 2) {
-		step = (step + 1) / 2;
+void bisect_insert(std::vector<T>& container, const T& x, const std::function<bool(const T&, const T&)>& comes_before) {
+	int LB = 0;
+	int UB = container.size();
+	int index;
+	while (UB != LB) {
+		index = (UB + LB) / 2;
 		if (comes_before(x, container[index])) {
-			index -= (index == 0) ? 0 : step;
+			UB = index;
 		}
 		else {
-			index += (index == container.size() - 1) ? 0 : step;
-			assert(index < container.size());
+			LB = index + 1;
 		}
 	}
-	// Last comparison for insertion
-	if (comes_before(x, container[index])) {
-		container.insert(container.begin() + index, x);
-	}
-	else {
-		container.insert(container.begin() + (index + 1), x);
-	}
-	// TODO REMOVE
-	for (int i = 0; i < container.size() - 1; i++) {
-		assert(comes_before(container[i], container[i + 1]));
-	}
+	container.insert(container.begin() + UB, x);
 }

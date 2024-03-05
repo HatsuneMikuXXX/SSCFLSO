@@ -137,6 +137,9 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 			symbol = "";
 		}
 	}
+	if (symbol != "") {
+		data.push_back(stof(symbol));
+	}
 	// Construct instance
 	
 	
@@ -187,7 +190,7 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 			for(int access = (index + client * J); access < (index + (client + 1) * J); access++){
 				preferences_of_client.push_back(data[access]);
 			}
-			res.instance.preferences.push_back(preferences_of_client);
+			res.instance.preferences[client] = preferences_of_client;
 		}
 	}
 	return res.instance;

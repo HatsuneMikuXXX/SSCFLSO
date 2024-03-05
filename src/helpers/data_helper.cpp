@@ -1,19 +1,19 @@
 #include "data_helper.h"
 
+const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> sort_by_first = [](const std::pair<int, double>& pair1, const std::pair<int, double>& pair2) {
+	return (pair1.first < pair2.first);
+};
+
+const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> sort_by_second = [](const std::pair<int, double>& pair1, const std::pair<int, double>& pair2) {
+	return (pair1.second < pair2.second);
+};
+
 std::vector<int> inverse(const std::vector<int>& index_set){
 	std::vector<int> res = std::vector<int>(index_set.size(), 0);
 	int i = 0;
 	for(auto it = index_set.begin(); it != index_set.end(); it++){
 		res[*it] = i;
 		i++;
-	}
-	return res;
-}
-
-std::vector<int> range(int n){
-	std::vector<int> res{};
-	for(int i = 0; i < n; i++){
-		res.push_back(i);
 	}
 	return res;
 }

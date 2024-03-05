@@ -13,9 +13,9 @@
 */
 class Greedy : public Algorithm {
 public:
-	static void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit);
-	static std::string meta_information();
+	void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit);
+	std::string meta_information();
 private:
-	static std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities);
+	std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities);
 };
 #endif

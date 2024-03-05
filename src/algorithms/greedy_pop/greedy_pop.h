@@ -13,11 +13,9 @@
 */
 class GreedyPop : public Algorithm {
 public:
-	static void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit);
-	static std::string meta_information();
+	void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit);
+	std::string meta_information();
 private:
-	static std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities, bool popularity);
+	std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities);
 };
-facility_vector greedy_with_popularity(const SSCFLSO& instance);
-facility_vector greedy_without_popularity(const SSCFLSO& instance);
 #endif
