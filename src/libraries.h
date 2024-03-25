@@ -9,6 +9,7 @@
 #include "algorithms/rounding/unit_test.h"
 #include "algorithms/greedy_pop/unit_test.h"
 #include "algorithms/local_search/unit_test.h"
+#include "algorithms/semi_lagrangian_relaxation/unit_test.h"
 #include "helpers/unit_test.h"
 
 // Model

@@ -77,24 +77,25 @@ void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& fi
 	// Put data into the corresponding strings
 	int J = ref_instance.facilities;
 	int I = ref_instance.clients;
-	std::string line1 = std::to_string(J) + "\t" + std::to_string(I);
-	std::string line2 = "";
-	std::string line3 = "";
-	std::string line4 = "";
+	std::ofstream out(filename);
+	out << std::to_string(J) + "\t" + std::to_string(I) << "\n\n";
 	std::string line5 = "";
 	std::string line6 = "";
 	// Demands
 	for(int client = 0; client < I; client++){
-		line2 += std::to_string(ref_instance.demands[client]) + "\t";
+		out << std::to_string(ref_instance.demands[client]) + "\t";
 	}
+	out << "\n\n";
 	// Capacities
 	for(int facility = 0; facility < J; facility++){
-		line3 += std::to_string(ref_instance.capacities[facility]) + "\t";
+		out << std::to_string(ref_instance.capacities[facility]) + "\t";
 	}
+	out << "\n\n";
 	// Opening costs
 	for(int facility = 0; facility < J; facility++){
-		line4 += std::to_string(ref_instance.facility_costs[facility]) + "\t";
+		out << std::to_string(ref_instance.facility_costs[facility]) + "\t";
 	}
+	out << "\n\n";
 	// Distance/Distribution costs
 	for(int facility = 0; facility < J; facility++){
 		for(int client = 0; client < I; client++){
@@ -102,7 +103,7 @@ void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& fi
 		}
 		line5 += "\n";
 	}
-	line5.pop_back();
+	out << line5 << "\n";
 	// Preferences
 	for(int client = 0; client < I; client++){
 		for(int facility = 0; facility < J; facility++){
@@ -111,9 +112,7 @@ void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& fi
 		line6 += "\n";
 	}
 	line6.pop_back();
-	std::string result = line1 + "\n\n" + line2 + "\n\n" + line3 + "\n\n" + line4 + "\n\n" + line5 + "\n\n" + line6;
-	std::ofstream out(filename);
-	out << result;
+	out << line6;
 	out.close();
 }
 
@@ -141,10 +140,17 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 		data.push_back(stof(symbol));
 	}
 	// Construct instance
-	
-	
 	int J = int(data[0]);
 	int I = int(data[1]);
+
+	// Quick assertion
+	if (preferences_included) {
+		assert(data.size() == 2 + I + 2*J + 2*I*J);
+	}
+	else {
+		assert(data.size() == 2 + I + 2 * J + I * J);
+	}
+
 	Generator res(J, I);
 	int counter = 0;
 	int index = 2;

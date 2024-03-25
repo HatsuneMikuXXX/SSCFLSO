@@ -28,7 +28,7 @@ class Generator{
 		/// @param filename the location to load from.
 		/// @param preferences_included if false then we set the preferences by distance. 
 		/// @return A created instance from the information.
-		static SSCFLSO load_instance(const std::string& filename, bool preferences_included = true, Category category = cooperative);
+		static SSCFLSO load_instance(const std::string& filename, bool preferences_included = false, Category category = cooperative);
 		/// @brief Creates an i300 instance and sets own attributes accordingly.
 		/// @param filename if empty then we do not save. 
 		void i300(const std::string& filename = "");

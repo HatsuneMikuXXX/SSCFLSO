@@ -7,6 +7,7 @@ void Rounding::solve(const SSCFLSO& instance, facility_vector& current_best, con
 	FLV.set_solution(no_unnecessary_facilities);
 	// If a solution is found then linear relaxation CANNOT be infeasible
 	if (!FLV.feasible()) {
+		current_best = no_unnecessary_facilities;
 		return;
 	}
 	// Find variables that can be eliminated
@@ -44,7 +45,7 @@ void Rounding::solve(const SSCFLSO& instance, facility_vector& current_best, con
 	FLV.drop_empty_facilities();
 	assert(FLV.feasible());
 	if (within_time_limit(start, time_limit)) {
-		current_best = solution;
+		current_best = FLV.get_solution();
 	}
 }
 

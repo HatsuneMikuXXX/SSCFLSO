@@ -40,6 +40,18 @@ bool areSame(const std::vector<double>& a, const std::vector<double>& b) {
 	}
 	return true;
 }
+bool areSame(const std::vector<int>& a, const std::vector<int>& b) {
+	if (b.size() != a.size()) {
+		return false;
+	}
+	for (int i = 0; i < a.size(); i++) {
+		if (!areSame(a[i], b[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool areSame(const std::vector<std::vector<double>>& a, const std::vector<std::vector<double>>& b) {
 	if (b.size() != a.size()) {
 		return false;
@@ -73,4 +85,24 @@ double magnitude(const std::vector<double>& v) {
 		res += (*it) * (*it);
 	}
 	return sqrt(res);
+}
+
+std::string primitive_list_to_string(const std::vector<int>& container) {
+	std::string msg = "[";
+	for (auto it = container.begin(); it != container.end(); it++) {
+		msg += std::to_string(*it) + ",";
+	}
+	msg.pop_back();
+	msg += "]";
+	return msg;
+}
+
+std::string primitive_list_to_string(const std::vector<double>& container) {
+	std::string msg = "[";
+	for (auto it = container.begin(); it != container.end(); it++) {
+		msg += std::to_string(*it) + ",";
+	}
+	msg.pop_back();
+	msg += "]";
+	return msg;
 }

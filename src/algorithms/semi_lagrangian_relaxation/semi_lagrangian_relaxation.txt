@@ -1,17 +1,7 @@
 Algorithm Information
 Name: Semi Lagrangian Relaxation
 Idea: 
-	Find optimal parameters for the easy-to-solve lagrangian relaxation.
-	Use those weights as an initial start for the semi lagrangian relaxation.
-	Solve the semi lagrangian relaxation repeatedly until the subgradient implies an optimum.
-	During the repeated solves, update the weights.
-Parameters: 
-	(SGM):
-		- maxIter = 50
-		- noImprovementIter = 2
-		- beta = 2
-		- beta_reduction_factor = 2 3
-	(DAM):
-		- maxIter = 50
-		- epsilon = 5 * 10e-7
+	Relax equality constraint and apply a weight to it then solve the parameterized LP.
+	Subgradient (b - Ax) tells us which weights to update.
+	If subgradient is 0 we reach an optimality condition.
 ### END OF INFORMATION ###

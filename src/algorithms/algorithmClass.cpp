@@ -2,8 +2,8 @@
 
 /**
 	* Removes unnecessary facilities which are:
-	* - Type I: Facilities that when opened always cause the solution to be infeasible
-	* - Type II: Facilities that cannot even serve one client
+	* - Type II: Facilities that when opened always cause the solution to be infeasible
+	* - Type I: Facilities that cannot even serve one client
 	* - Type III: Facilities that are never assigned because they are too unpopular
 */
 
@@ -23,7 +23,7 @@ facility_vector Algorithm::preprocess(const SSCFLSO& instance) {
 	Validator FLV = Validator(instance);
 	facility_vector no_unnecessary_facilities = facility_vector(instance.facilities, 1);
 	{
-		// Remove facilities of Type I
+		// Remove facilities of Type II
 		FLV.set_solution(no_unnecessary_facilities);
 		{
 			facility_vector exceeds_capacity;
@@ -35,13 +35,15 @@ facility_vector Algorithm::preprocess(const SSCFLSO& instance) {
 			}
 		}
 	}
+	int x = instance.facilities - sum(no_unnecessary_facilities);
 	{
-		// Remove facilities of Type II
+		// Remove facilities of Type I
 		double minimum_demand = *min_element(instance.demands.begin(), instance.demands.end());
 		capacity_vector capacities = instance.capacities;
 		facility_predicate predicate = [capacities, minimum_demand](int facility) { return capacities[facility] >= minimum_demand; };
 		filter(no_unnecessary_facilities, predicate);
 	}
+	int y = instance.facilities - sum(no_unnecessary_facilities) - x;
 	{
 		// Remove facilities of Type III
 		bool fixpoint_reached = false;
@@ -85,6 +87,7 @@ facility_vector Algorithm::preprocess(const SSCFLSO& instance) {
 			}
 		}	
 	}
+	int z = instance.facilities - sum(no_unnecessary_facilities) - x - y;
 	return no_unnecessary_facilities;
 }
 
@@ -181,8 +184,7 @@ relaxed_solution Algorithm::solve_linear_relaxation(const SSCFLSO& instance, con
 			for (int j = 0; j < m; j++) {
 				totdemand += distribution[j][i];
 			}
-			std::string name = "Demand: " + std::to_string(i);
-			model.addConstr(totdemand == 1, name);
+			model.addConstr(totdemand == 1);
 		}
 		// Constraint capacity
 		for (int j = 0; j < m; j++) {
@@ -190,8 +192,7 @@ relaxed_solution Algorithm::solve_linear_relaxation(const SSCFLSO& instance, con
 			for (int i = 0; i < n; i++) {
 				totdemand += instance.demands[i] * distribution[j][i];
 			}
-			std::string name = "Capacity: " + std::to_string(j);
-			model.addConstr(totdemand <= instance.capacities[j] * open[j], name);
+			model.addConstr(totdemand <= instance.capacities[j] * open[j]);
 		}
 		// Constraint preference
 		std::vector<std::vector<int>> rankings = std::vector<std::vector<int>>(n);
@@ -204,8 +205,7 @@ relaxed_solution Algorithm::solve_linear_relaxation(const SSCFLSO& instance, con
 						preference += distribution[k][i];
 					}
 				}
-				std::string name = "Preference i/j: " + std::to_string(i)  + " " + std::to_string(j);
-				model.addConstr(preference <= 1, name);
+				model.addConstr(preference <= 1);
 			}
 		}
 		// Bounds/Variables to eliminate
@@ -240,10 +240,7 @@ relaxed_solution Algorithm::solve_linear_relaxation(const SSCFLSO& instance, con
 			}
 		}
 		auto start = start_timer();
-		std::cout << "Start" << std::endl;
 		model.optimize();
-		double ms = get_elapsed_time_ms(start).count();
-		std::cout << "Solving took around: " << ms << " ms" << std::endl;
 		res.rFacility_vector = std::vector<double>(m, -1);
 		for (int j = 0; j < m; j++) {
 			res.rFacility_vector[j] = open[j].get(GRB_DoubleAttr_X);
@@ -288,8 +285,6 @@ extended_solution Algorithm::solve_lagrangian_relaxation(const SSCFLSO& instance
 				coefficient += multipliers.preference_constraint_weight[i][j];
 			}
 			open[j].set(GRB_DoubleAttr_Obj, coefficient);
-			open[j].set(GRB_DoubleAttr_LB, 0);
-			open[j].set(GRB_DoubleAttr_UB, 1.0);
 		}
 		// Distribution variables + Bound
 		GRBVar** distribution = new GRBVar * [instance.facilities];
@@ -302,8 +297,6 @@ extended_solution Algorithm::solve_lagrangian_relaxation(const SSCFLSO& instance
 					coefficient += multipliers.preference_constraint_weight[i][*k];
 				}
 				distribution[j][i].set(GRB_DoubleAttr_Obj, coefficient);
-				distribution[j][i].set(GRB_DoubleAttr_LB, 0);
-				distribution[j][i].set(GRB_DoubleAttr_UB, 1.0);
 			}
 		}
 		// Objective - Constant coefficient are irrelevant

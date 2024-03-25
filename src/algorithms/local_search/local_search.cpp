@@ -12,8 +12,8 @@ void LocalSearch::solve(const SSCFLSO& instance, facility_vector& current_best, 
 		stuck_in_local_optima = true;
 		// Collect neighborhoods
 		neighborhood = {};
-		//tmp = add_neighborhood(solution, no_unnecessary_facilities); // I think this is not necessary, given the start
-		//neighborhood.insert(neighborhood.begin(), tmp.begin(), tmp.end());
+		tmp = add_neighborhood(solution, no_unnecessary_facilities); // I think this is not necessary, given the start
+		neighborhood.insert(neighborhood.begin(), tmp.begin(), tmp.end());
 		tmp = swap_neighborhood(solution, no_unnecessary_facilities);
 		neighborhood.insert(neighborhood.begin(), tmp.begin(), tmp.end());
 		tmp = remove_neighborhood(solution);
@@ -27,6 +27,7 @@ void LocalSearch::solve(const SSCFLSO& instance, facility_vector& current_best, 
 				solution = *neighbor;
 				current_value = FLV.value();
 				stuck_in_local_optima = false;
+				break;
 			}
 		}
 		if (!within_time_limit(start, time_limit)) {

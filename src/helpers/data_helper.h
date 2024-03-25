@@ -14,6 +14,7 @@ void filter(facility_vector& facilities, const facility_predicate& predicate);
 
 bool areSame(double a, double b);
 bool areSame(const std::vector<double>& a, const std::vector<double>& b);
+bool areSame(const std::vector<int>& a, const std::vector<int>& b);
 bool areSame(const std::vector<std::vector<double>>& a, const std::vector<std::vector<double>>& b);
 
 int sum(const std::vector<int>& a);
@@ -22,6 +23,9 @@ double sum(const std::vector<double>& a);
 int hamming_distance(const facility_vector& a, const facility_vector& b);
 // Returns ||v||_2
 double magnitude(const std::vector<double>& v);
+
+std::string primitive_list_to_string(const std::vector<int>& container);
+std::string primitive_list_to_string(const std::vector<double>& container);
 
 // Generic functions
 template<typename T>
