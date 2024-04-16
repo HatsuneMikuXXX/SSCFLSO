@@ -3,12 +3,10 @@
 #include "../SSCFLSO/SSCFLSO_validator.h"
 #include "../SSCFLSO/SSCFLSO_generator.h"
 #include "../common.h"
-#include "../algorithms/DoNothing/DoNothing.h"
+#include "../algorithms/Preprocess/Preprocess.h"
 #include "../algorithms/algorithmClass.h"
 typedef std::function<void(const SSCFLSO&, facility_vector&, const std::chrono::milliseconds&)> algorithm;
-void run(Algorithm& algo, const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, int timelimit_in_milliseconds);
-void initial_solution(const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path);
-void gaps(const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, const facility_vector& initial_solution, double timelimit_in_seconds);
+void run(Algorithm* algo, const bool gurobi_afterwards, const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, int timelimit_in_milliseconds);
 /*
 void run(const std::vector<std::pair<std::string, algorithm>>& algorithms, 
 	const std::vector<std::string>& instances, 

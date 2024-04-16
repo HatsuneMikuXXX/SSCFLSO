@@ -1,6 +1,7 @@
 #ifndef GREEDY_POP_H
 #define GREEDY_POP_H
 #include "../algorithmClass.h"
+#include "greedy_pop_info.h"
 /**
  * Utility is computed in the following way:
  * The utility of unnecessary facilities is always 0. The remaining description skips unnecessary facilities:
@@ -13,7 +14,7 @@
 */
 class GreedyPop : public Algorithm {
 public:
-	void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit);
+	void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards);
 	std::string meta_information();
 private:
 	std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities);

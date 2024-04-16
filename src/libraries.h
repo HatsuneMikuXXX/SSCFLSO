@@ -4,12 +4,12 @@
 // Unit Tests
 #include "SSCFLSO/unit_test.h"
 #include "algorithms/unit_test.h"
-#include "algorithms/stingy/unit_test.h"
+#include "redacted_algorithms/stingy/unit_test.h"
 #include "algorithms/greedy/unit_test.h"
 #include "algorithms/rounding/unit_test.h"
 #include "algorithms/greedy_pop/unit_test.h"
 #include "algorithms/local_search/unit_test.h"
-#include "algorithms/semi_lagrangian_relaxation/unit_test.h"
+#include "redacted_algorithms/semi_lagrangian_relaxation/unit_test.h"
 #include "helpers/unit_test.h"
 
 // Model
@@ -20,14 +20,14 @@
 // Helpers
 #include "helpers/random.h"
 #include "helpers/data_helper.h"
-
 #include "helpers/benchmark.h"
 
+// User interaction
+#include "UI/UI.h"
 
 // Algorithms
 #include "algorithms/local_search/local_search.h"
 #include "algorithms/greedy/greedy.h"
-#include "algorithms/stingy/stingy.h"
 
 // Others
 #include "common.h"

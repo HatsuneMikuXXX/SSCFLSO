@@ -1,6 +1,6 @@
 #include "greedy.h"
 
-void Greedy::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit) {
+void Greedy::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) {
 	auto start = start_timer();
 	// Compute utilities
 	std::vector<int> no_unnecessary_facilities = preprocess(instance);
@@ -26,6 +26,18 @@ void Greedy::solve(const SSCFLSO& instance, facility_vector& current_best, const
 	FLV.drop_empty_facilities();
 	if (!within_time_limit(start, time_limit)) { return; }
 	current_best = FLV.get_solution();
+	if (gurobi_afterwards) {
+		auto remaining = time_limit - get_elapsed_time_ms(start);
+		if (remaining.count() < GUROBI_TIME_BUFFER) {
+			return;
+		}
+		solution = solve_with_gurobi(instance, remaining, current_best);
+
+		if (within_time_limit(start, time_limit)) {
+			std::cout << "Gurobi Afterwards Successful" << std::endl;
+			current_best = solution;
+		}
+	}
 }
 
 std::vector<std::pair<int, double>> Greedy::utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities) {
@@ -45,12 +57,5 @@ std::vector<std::pair<int, double>> Greedy::utility(const SSCFLSO& instance, con
 }
 
 std::string Greedy::meta_information() {
-	std::ifstream file(PATH + "greedy/greedy.txt");
-	if (file) {
-		std::string content((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
-		return content;
-	}
-	else {
-		throw std::runtime_error("Greedy information file not found.");
-	}
+	return greedy_info;
 }

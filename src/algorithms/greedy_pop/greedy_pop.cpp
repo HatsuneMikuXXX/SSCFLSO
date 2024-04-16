@@ -1,6 +1,6 @@
 #include "greedy_pop.h"
 
-void GreedyPop::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit) {
+void GreedyPop::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) {
 	auto start = start_timer();
 	// Compute utilities
 	std::vector<int> no_unnecessary_facilities = preprocess(instance);
@@ -26,6 +26,18 @@ void GreedyPop::solve(const SSCFLSO& instance, facility_vector& current_best, co
 	FLV.drop_empty_facilities();
 	if (!within_time_limit(start, time_limit)) { return; }
 	current_best = FLV.get_solution();
+	if (gurobi_afterwards) {
+		auto remaining = time_limit - get_elapsed_time_ms(start);
+		if (remaining.count() < GUROBI_TIME_BUFFER) {
+			return;
+		}
+		solution = solve_with_gurobi(instance, remaining, current_best);
+
+		if (within_time_limit(start, time_limit)) {
+			std::cout << "Gurobi Afterwards Successful" << std::endl;
+			current_best = solution;
+		}
+	}
 }
 
 std::vector<std::pair<int, double>> GreedyPop::utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities) {
@@ -67,13 +79,6 @@ std::vector<std::pair<int, double>> GreedyPop::utility(const SSCFLSO& instance, 
 }
 
 std::string GreedyPop::meta_information() {
-	std::ifstream file(PATH + "greedy_pop/greedy_pop.txt");
-	if (file) {
-		std::string content((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
-		return content;
-	}
-	else {
-		throw std::runtime_error("Greedy Pop information file not found.");
-	}
+	return greedy_pop_info;
 }
 

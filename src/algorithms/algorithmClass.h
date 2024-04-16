@@ -34,9 +34,10 @@ typedef struct lagrangian_multipliers {
 
 class Algorithm {
 	public:
-		virtual void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit) = 0;
+		virtual void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) = 0;
 		virtual std::string meta_information() = 0;
-
+		facility_vector solve_with_gurobi(const SSCFLSO& instance, const std::chrono::milliseconds& time_limit, const facility_vector& initial_solution);
+		
 		std::chrono::system_clock::time_point start_timer();
 		std::chrono::milliseconds get_elapsed_time_ms(const std::chrono::system_clock::time_point& start);
 		bool within_time_limit(const std::chrono::system_clock::time_point& start, const std::chrono::milliseconds& time_limit);
@@ -47,7 +48,7 @@ class Algorithm {
 		std::vector<facility_vector> remove_neighborhood(const facility_vector& x);
 		std::vector<facility_vector> swap_neighborhood(const facility_vector& x, const facility_vector& preprocessed);
 		relaxed_solution solve_linear_relaxation(const SSCFLSO& instance, const eliminate_variables& variables, const initial_solution* init);
-		extended_solution solve_lagrangian_relaxation(const SSCFLSO& instance, const lagrangian_multipliers& multipliers);
+
 	protected:
 		const std::string PATH = "src/algorithms/";
 };

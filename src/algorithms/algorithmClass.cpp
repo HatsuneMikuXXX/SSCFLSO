@@ -35,7 +35,6 @@ facility_vector Algorithm::preprocess(const SSCFLSO& instance) {
 			}
 		}
 	}
-	int x = instance.facilities - sum(no_unnecessary_facilities);
 	{
 		// Remove facilities of Type I
 		double minimum_demand = *min_element(instance.demands.begin(), instance.demands.end());
@@ -43,13 +42,15 @@ facility_vector Algorithm::preprocess(const SSCFLSO& instance) {
 		facility_predicate predicate = [capacities, minimum_demand](int facility) { return capacities[facility] >= minimum_demand; };
 		filter(no_unnecessary_facilities, predicate);
 	}
-	int y = instance.facilities - sum(no_unnecessary_facilities) - x;
 	{
 		// Remove facilities of Type III
 		bool fixpoint_reached = false;
 		while (!fixpoint_reached) {
 			fixpoint_reached = true;
 			int min = lower_bound_facilities_required(instance, no_unnecessary_facilities);
+			if (min == -1) {
+				break;
+			}
 			// Compute rankings
 			std::vector<std::map<int, int>> rankings;
 			for (int i = 0; i < instance.clients; i++) {
@@ -87,17 +88,16 @@ facility_vector Algorithm::preprocess(const SSCFLSO& instance) {
 			}
 		}	
 	}
-	int z = instance.facilities - sum(no_unnecessary_facilities) - x - y;
 	return no_unnecessary_facilities;
 }
 
 int Algorithm::lower_bound_facilities_required(const SSCFLSO& instance, const facility_vector& facilities_to_consider) {
 	// Collect capacities in a sorted order
-	const std::function<bool(const double&, const double&)> is_less = [](const double& a, const double& b) { return a < b; };
+	const std::function<bool(const double&, const double&)> is_greater = [](const double& a, const double& b) { return a > b; };
 	capacity_vector sorted_capacities = {};
 	for (int j = 0; j < instance.facilities; j++) {
 		if (facilities_to_consider[j] == 0) { continue; }
-		bisect_insert(sorted_capacities, instance.capacities[j], is_less);
+		bisect_insert(sorted_capacities, instance.capacities[j], is_greater);
 	}
 	// Compute minimum amount of facilities required
 	double total_demand = sum(instance.demands);
@@ -106,6 +106,9 @@ int Algorithm::lower_bound_facilities_required(const SSCFLSO& instance, const fa
 	for (auto it = sorted_capacities.begin(); it != sorted_capacities.end() && min_capacity < total_demand; it++) {
 		min += 1;
 		min_capacity += *it;
+	}
+	if (min_capacity < total_demand) {
+		return -1;
 	}
 	return min;
 }
@@ -153,6 +156,8 @@ std::vector<facility_vector> Algorithm::swap_neighborhood(const facility_vector&
 	}
 	return res;
 }
+
+
 
 relaxed_solution Algorithm::solve_linear_relaxation(const SSCFLSO& instance, const eliminate_variables& variables, const initial_solution* init) {
 	relaxed_solution res = relaxed_solution();
@@ -259,44 +264,26 @@ relaxed_solution Algorithm::solve_linear_relaxation(const SSCFLSO& instance, con
 	return res;
 }
 
-extended_solution Algorithm::solve_lagrangian_relaxation(const SSCFLSO& instance, const lagrangian_multipliers& multipliers) {
-	extended_solution res;
-	res.ES_facilities = facility_vector(instance.facilities, -1);
-
+facility_vector Algorithm::solve_with_gurobi(const SSCFLSO& instance, const std::chrono::milliseconds& time_limit, const facility_vector& initial_solution) {
+	auto start = std::chrono::system_clock::now();
 	int m = instance.facilities;
 	int n = instance.clients;
-		
-	assert(n == multipliers.demand_constraint_weight.size());
-	assert(m == multipliers.capacity_constraint_weight.size());
-	for (int i = 0; i < n; i++) {
-		assert(m == multipliers.preference_constraint_weight[i].size());
-	}
-		
 	try {
 		// Define the model
 		GRBEnv* env = new GRBEnv();
-		GRBModel model = GRBModel(*env);
 		env->set(GRB_IntParam_OutputFlag, 0); // Surpress Console
+		GRBModel model = GRBModel(*env);
 		// Facility variables
 		GRBVar* open = model.addVars(m, GRB_BINARY);
 		for (int j = 0; j < m; j++) {
-			double coefficient = instance.facility_costs[j] - instance.capacities[j] * multipliers.capacity_constraint_weight[j];
-			for (int i = 0; i < n; i++) {
-				coefficient += multipliers.preference_constraint_weight[i][j];
-			}
-			open[j].set(GRB_DoubleAttr_Obj, coefficient);
+			open[j].set(GRB_DoubleAttr_Obj, instance.facility_costs[j]);
 		}
-		// Distribution variables + Bound
+		// Distribution variables
 		GRBVar** distribution = new GRBVar * [instance.facilities];
 		for (int j = 0; j < m; j++) {
 			distribution[j] = model.addVars(n, GRB_BINARY);
 			for (int i = 0; i < n; i++) {
-				double coefficient = instance.distribution_costs[j][i] + multipliers.demand_constraint_weight[i] + instance.demands[i] * multipliers.capacity_constraint_weight[i];
-				for (auto k = instance.preferences[i].begin(); k != instance.preferences[i].end(); k++) {
-					if (*k == j) { break; }
-					coefficient += multipliers.preference_constraint_weight[i][*k];
-				}
-				distribution[j][i].set(GRB_DoubleAttr_Obj, coefficient);
+				distribution[j][i].set(GRB_DoubleAttr_Obj, instance.distribution_costs[j][i]);
 			}
 		}
 		// Objective - Constant coefficient are irrelevant
@@ -307,23 +294,48 @@ extended_solution Algorithm::solve_lagrangian_relaxation(const SSCFLSO& instance
 			for (int j = 0; j < m; j++) {
 				totdemand += distribution[j][i];
 			}
-			model.addConstr(totdemand >= 1);
+			model.addConstr(totdemand == 1);
 		}
-		model.optimize();
+		// Constraint capacity
 		for (int j = 0; j < m; j++) {
-			res.ES_facilities[j] = (open[j].get(GRB_DoubleAttr_X));
+			GRBLinExpr totdemand = 0;
+			for (int i = 0; i < n; i++) {
+				totdemand += instance.demands[i] * distribution[j][i];
+			}
+			model.addConstr(totdemand <= instance.capacities[j] * open[j]);
 		}
+		// Constraint preference
+		std::vector<std::vector<int>> rankings = std::vector<std::vector<int>>(n);
 		for (int i = 0; i < n; i++) {
-			res.ES_extended_assignment.push_back(std::vector<int>(instance.facilities, -1));
+			rankings[i] = inverse(instance.preferences[i]);
 			for (int j = 0; j < m; j++) {
-				res.ES_extended_assignment[i][j] = (distribution[j][i].get(GRB_DoubleAttr_X));
+				GRBLinExpr preference = open[j];
+				for (int k = 0; k < m; k++) {
+					if (rankings[i][k] > rankings[i][j]) {
+						preference += distribution[k][i];
+					}
+				}
+				model.addConstr(preference <= 1);
 			}
 		}
+
+		// Initial solution
+		for (int j = 0; j < m; j++) {
+			open[j].set(GRB_DoubleAttr_Start, initial_solution[j]);
+		}
+		auto subtract = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+		model.set(GRB_DoubleParam_TimeLimit, (double((time_limit - subtract).count()) / 1000) - 5);
+		model.optimize();
+		facility_vector solution = facility_vector(instance.facilities, -1);
+		for (int j = 0; j < m; j++) {
+			solution[j] = open[j].get(GRB_DoubleAttr_X);
+		}
+		return solution;
 	}
 	catch (std::exception e) {
 		std::cerr << "Something went wrong:\n" << e.what() << std::endl;
 	}
-	return res;
+	catch (GRBException e) {
+		std::cerr << "Something went wrong:\n" << e.getMessage() << std::endl;
+	}
 }
-
-

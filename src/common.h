@@ -21,4 +21,6 @@
 #include <stdexcept> 
 // Time
 #include <chrono> 
+// String manipulation
+#include <cctype>
 #endif

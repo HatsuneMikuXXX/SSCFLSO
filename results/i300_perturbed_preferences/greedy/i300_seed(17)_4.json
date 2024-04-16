@@ -1,0 +1,10 @@
+{
+	"Instance id" : "i300_seed(17)_4_perturbed_preferences.plc",
+	"Algorithm information" : "Algorithm InformationName: GreedyIdea: 	Compute utility of each (non-unnecessary) facility as their capacity divided by their facility cost and sum of all their distribution costs.	Add iteratively those facilities that give us the greatest utility gain.	Stop as soon as we have a feasible solution.	(Non-Greedy typical) Finally, remove all non-serving facilities.Parameters: None.### END OF INFORMATION ###",
+	"Gurobi used afterwards" : 0,
+	"Solution Feasibility" : 1,
+	"Solution" : [1,1,1,1,0,1,0,1,0,0,1,0,1,1,0,0,1,1,1,0,1,1,0,0,1,0,1,0,0,1,1,1,1,1,0,1,1,1,0,1,0,1,0,1,0,0,0,1,1,1,0,0,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,0,1,1,0,0,1,1,1,1,0,0,1,1,1,0,1,0,1,0,0,0,1,1,0,0,1,0,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,1,1,0,1,0,0,1,0,0,1,1,1,0,0,0,1,0,1,0,0,0,1,1,1,0,1,1,0,0,0,0,0,1,0,1,1,0,1,0,0,1,0,0,0,0,0,1,0,0,1,0,0,1,0,1,1,1,1,1,0,0,1,0,0,1,0,0,1,1,1,0,1,0,1,1,1,0,0,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1,1,1,1,0,0,0,0,1,1,0,1,0,0,1,0,1,1,0,0,1,1,1,0,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,0,0,0,1,1,0,1,1,1,0,1,1,0,1,1,1,0,1,1,1,0,0,1,1,0,1,0,0,0,1,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,0],
+	"Solution value": 104353,
+	"Timelimit in milliseconds" : 600000,
+	"Time in milliseconds" : 353
+}
