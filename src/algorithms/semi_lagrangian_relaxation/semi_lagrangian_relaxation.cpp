@@ -107,7 +107,7 @@ std::vector<std::vector<double>> SemiLagrangianRelaxation::weight_update_matrix(
 		weights.push_back(std::vector<double>());
 		double max_distance = -1;
 		for (int j = 0; j < instance.facilities; j++) {
-			//bisect_insert(weights[i], instance.distribution_costs[j][i] + 0.005, is_less);
+			bisect_insert(weights[i], instance.distribution_costs[j][i] + 0.005, is_less);
 			max_distance = (max_distance < instance.distribution_costs[j][i]) ? instance.distribution_costs[j][i] : max_distance;
 		}
 		double accumulated_weight = max_distance + 0.005;

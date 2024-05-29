@@ -1,10 +1,10 @@
 #include "benchmark.h"
 
 void run(Algorithm* algo, const bool gurobi_afterwards, const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, int timelimit_in_milliseconds) {
-	facility_vector solution = facility_vector(instance.facilities, -1);
-	std::chrono::milliseconds timelimit_as_chrono(timelimit_in_milliseconds);
-	Preprocess DoNothingObject = Preprocess(); // We do not preprocess anything, we just need access to Algorithm methods
-	auto start = DoNothingObject.start_timer();
+	facility_vector solution = facility_vector(instance.facilities, 0);
+	Timer timer(timelimit_in_milliseconds);
+
+
 	algo->solve(instance, solution, timelimit_as_chrono, gurobi_afterwards);
 	auto measured_time = DoNothingObject.get_elapsed_time_ms(start).count();
 	Validator FLV = Validator(instance);

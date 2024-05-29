@@ -1,14 +1,28 @@
 #include "greedy.h"
 
-void Greedy::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) {
-	auto start = start_timer();
+void Greedy::solve(const SSCFLSO& instance, solution_and_value& SAV, Timer& timer, const bool gurobi_afterwards) {
+	// preprocess
+	Preprocess preprocess_algorithm = Preprocess();
+	facility_vector preprocessed_solution;
+	solution_and_value preprocessed_SAV = { preprocessed_solution, -1 };
+	preprocess_algorithm.solve(instance, preprocessed_SAV, timer, false);
+	if (is_empty(preprocessed_SAV.sol)) { return; }
+
 	// Compute utilities
-	std::vector<int> no_unnecessary_facilities = preprocess(instance);
-	if (sum(no_unnecessary_facilities) == 0) {
-		current_best = no_unnecessary_facilities;
-		return;
+	std::vector<std::pair<int, double>> utilities = {};
+	{
+		for (int j = 0; j < instance.facilities; j++) {
+			if (preprocessed_SAV.sol[j] == 0) {
+				bisect_insert(utilities, std::pair<int, double>(j, -1), sort_by_second);
+			}
+			else {
+				double total_cost = (instance.facility_costs[j] + sum(instance.distribution_costs[j]));
+				double utility = (total_cost == 0) ? DBL_MAX : instance.capacities[j] / total_cost;
+				bisect_insert(utilities, std::pair<int, double>(j, utility), sort_by_second);
+			}
+		}
 	}
-	std::vector<std::pair<int, double>> utilities = utility(instance, no_unnecessary_facilities);
+
 	// Greedy
 	Validator FLV = Validator(instance);
 	facility_vector solution = facility_vector(instance.facilities, 0);
@@ -23,8 +37,12 @@ void Greedy::solve(const SSCFLSO& instance, facility_vector& current_best, const
 		FLV.set_solution(solution);
 		index--;
 	}
+
+	// Drop empty facilities afterwards
 	FLV.drop_empty_facilities();
 	if (!within_time_limit(start, time_limit)) { return; }
+
+	// Apply gurobi afterwards
 	current_best = FLV.get_solution();
 	if (gurobi_afterwards) {
 		auto remaining = time_limit - get_elapsed_time_ms(start);
@@ -38,24 +56,4 @@ void Greedy::solve(const SSCFLSO& instance, facility_vector& current_best, const
 			current_best = solution;
 		}
 	}
-}
-
-std::vector<std::pair<int, double>> Greedy::utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities) {
-	std::vector<std::pair<int, double>> utilities = {};
-	// Compute utilities
-	for (int j = 0; j < instance.facilities; j++) {
-		if (no_unnecessary_facilities[j] == 0) {
-			bisect_insert(utilities, std::pair<int, double>(j, -1), sort_by_second);
-		}
-		else {
-			double denominator = (instance.facility_costs[j] + sum(instance.distribution_costs[j]));
-			double utility = (denominator == 0) ? DBL_MAX : instance.capacities[j] / denominator;
-			bisect_insert(utilities, std::pair<int, double>(j, utility), sort_by_second);
-		}
-	}
-	return utilities;
-}
-
-std::string Greedy::meta_information() {
-	return greedy_info;
 }

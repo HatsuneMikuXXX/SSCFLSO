@@ -1,7 +1,6 @@
 #ifndef SEMI_LAGRANGIAN_RELAXATION
 #define SEMI_LAGRANGIAN_RELAXATION
 #include "../../algorithms/algorithmClass.h"
-#include "../stingy/stingy.h"
 #include <gurobi_c++.h>
 
 

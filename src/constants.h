@@ -8,5 +8,6 @@
 */
 const double EPSILON = 10e-7;
 const double GUROBI_TIME_BUFFER = 90000;
+const double GUROBI_BUFFER = 2;
 const std::chrono::milliseconds TWO_MINUTES(120 * 1000);
 #endif

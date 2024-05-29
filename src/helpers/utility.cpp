@@ -1,4 +1,4 @@
-#include "data_helper.h"
+#include "utility.h"
 
 const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> sort_by_first = [](const std::pair<int, double>& pair1, const std::pair<int, double>& pair2) {
 	return (pair1.first < pair2.first);
@@ -26,42 +26,47 @@ void filter(facility_vector& facilities, const facility_predicate& predicate) {
 	}
 }
 
-bool areSame(double a, double b){
+bool are_same(double a, double b){
 	return fabs(a - b) < EPSILON;
 }
-bool areSame(const std::vector<double>& a, const std::vector<double>& b) {
+bool are_same(const std::vector<double>& a, const std::vector<double>& b) {
 	if (b.size() != a.size()) {
 		return false;
 	}
 	for (int i = 0; i < a.size(); i++) {
-		if (!areSame(a[i], b[i])) {
-			return false;
-		}
-	}
-	return true;
-}
-bool areSame(const std::vector<int>& a, const std::vector<int>& b) {
-	if (b.size() != a.size()) {
-		return false;
-	}
-	for (int i = 0; i < a.size(); i++) {
-		if (!areSame(a[i], b[i])) {
+		if (!are_same(a[i], b[i])) {
 			return false;
 		}
 	}
 	return true;
 }
 
-bool areSame(const std::vector<std::vector<double>>& a, const std::vector<std::vector<double>>& b) {
+bool are_same(const std::vector<int>& a, const std::vector<int>& b) {
 	if (b.size() != a.size()) {
 		return false;
 	}
 	for (int i = 0; i < a.size(); i++) {
-		if (!areSame(a[i], b[i])) {
+		if (!are_same(a[i], b[i])) {
 			return false;
 		}
 	}
 	return true;
+}
+
+bool are_same(const std::vector<std::vector<double>>& a, const std::vector<std::vector<double>>& b) {
+	if (b.size() != a.size()) {
+		return false;
+	}
+	for (int i = 0; i < a.size(); i++) {
+		if (!are_same(a[i], b[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool is_empty(const facility_vector& a) {
+	return sum(a) == 0;
 }
 
 int sum(const std::vector<int>& a) {

@@ -1,7 +1,7 @@
 #ifndef GREEDY_H
 #define GREEDY_H
 #include "../algorithmClass.h"
-#include "greedyInfo.h"
+#include "../Preprocess/preprocess.h"
 /**
  * Utility is computed in the following way:
  * The utility of unnecessary facilities is always 0. The remaining description skips unnecessary facilities:
@@ -14,8 +14,7 @@
 */
 class Greedy : public Algorithm {
 public:
-	void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards);
-	std::string meta_information();
+	void solve(const SSCFLSO& instance, solution_and_value& SAV, Timer& timer, const bool gurobi_afterwards);
 private:
 	std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities);
 };

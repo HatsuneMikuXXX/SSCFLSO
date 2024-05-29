@@ -2,13 +2,13 @@
 
 bool SSCFLSOUnitTest::run_tests(){
 	try{
-		std::cout << "Running SSCFLSO Test 1..." << std::endl;
+		std::cout << "Running SSCFLSO Test 1: Create and update instance correctly." << std::endl;
 		test1();
-		std::cout << "OK\nRunning SSCFLSO Test 2..." << std::endl;
+		std::cout << "OK\nRunning SSCFLSO Test 2: Save and load." << std::endl;
 		test2();
-		std::cout << "OK\nRunning SSCFLSO Test 3..." << std::endl;
+		std::cout << "OK\nRunning SSCFLSO Test 3: Assignment, Objective value, Feasibility and number of capacity exceeding facilities." << std::endl;
 		test3();
-		std::cout << "OK\nRunning SSCFLSO Test 4..." << std::endl;
+		std::cout << "OK\nRunning SSCFLSO Test 4: Remove non-supplying facilities." << std::endl;
 		test4();
 		std::cout << "OK" << std::endl;
 	}
@@ -48,13 +48,13 @@ void SSCFLSOUnitTest::test1(){
 	GeneratorObject.set_distribution_cost(0, 3, 10);
 	GeneratorObject.set_distribution_cost(1, 3, 0);
 	GeneratorObject.set_distribution_cost(2, 3, 1);
-	GeneratorObject.set_preferences(Generator::Category::cooperative);
+	GeneratorObject.set_preferences(Generator::Category::closest_assignment);
 	std::vector<int> y1{2, 0, 1};
 	std::vector<int> y2{1, 2, 0};
 	bool b1 = GeneratorObject.get_instance().preferences[2] == y1;
 	bool b2 = GeneratorObject.get_instance().preferences[3] == y2;
 	if(!(b1 && b2)){
-		throw std::runtime_error("Setting preferences by distance failed.");
+		throw std::runtime_error("Setting preferences using closest assignment failed.");
 	}
 }
 
@@ -72,7 +72,7 @@ void SSCFLSOUnitTest::test2(){
 			GeneratorObject.set_distribution_cost(i, j, distribution_costs[i][j]);
 		}
 	}
-	GeneratorObject.set_preferences(Generator::Category::cooperative);
+	GeneratorObject.set_preferences(Generator::Category::closest_assignment);
 	SSCFLSO SSCFLSOObject = GeneratorObject.get_instance();
 	GeneratorObject.save_instance(SSCFLSOObject, "instances/unit_tests/unit_test_SSCFLSO.plc", true);
 	SSCFLSOObject = GeneratorObject.load_instance("instances/unit_tests/unit_test_SSCFLSO.plc");

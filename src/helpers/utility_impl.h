@@ -14,18 +14,6 @@ std::vector<T1> projection_1_2(const std::vector<std::pair<T1, T2>>& pairs){
 }
 
 template<typename T>
-void bisect_insert(std::vector<T>& container, const T& x, const std::function<bool(const T&, const T&)>& comes_before) {
-	int LB = 0;
-	int UB = container.size();
-	int index;
-	while (UB != LB) {
-		index = (UB + LB) / 2;
-		if (comes_before(x, container[index])) {
-			UB = index;
-		}
-		else {
-			LB = index + 1;
-		}
-	}
-	container.insert(container.begin() + UB, x);
+void insert_sorted_container(std::vector<T>& sorted_container, const T& to_insert, const std::function<bool(const T&, const T&)> LEQ) {
+	sorted_container.insert(std::upper_bound(sorted_container.begin(), sorted_container.end(), to_insert, LEQ), to_insert);
 }

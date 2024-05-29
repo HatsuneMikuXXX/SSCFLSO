@@ -4,187 +4,212 @@
  * Responsible for creating SSCFLSO instances, saving instances as files, and loading instances from files.
 */
 
-Generator::Generator(int J, int I){
-	this->instance.facilities = J;
-	this->instance.clients = I;
-	this->instance.demands = demand_vector(I, 0);
-	this->instance.capacities = capacity_vector(J, 0);
-	this->instance.facility_costs = facility_cost_vector(J, 0);
-	this->instance.distribution_costs = distribution_cost_matrix(J, std::vector<double>(I, 0));
-	this->instance.preferences = preference_matrix(I, std::vector<int>(J, -1));
+Generator::Generator(const int number_of_facilities, const int number_of_clients){
+	this->instance = {
+		number_of_facilities,
+		number_of_clients,
+		demand_vector(number_of_clients, -1),
+		capacity_vector(number_of_facilities, -1),
+		facility_cost_vector(number_of_facilities, -1),
+		distribution_cost_matrix(number_of_facilities, std::vector<double>(number_of_clients, -1)),
+		preference_matrix(number_of_clients, std::vector<int>(number_of_facilities, -1)),
+	};
 }
 
-void Generator::set_preferences(Category category){
-	// Sort facilities by the preference order
-	std::vector<std::pair<int, double>> facility_distribution_cost_pairs;
+void Generator::set_preferences(const Category category){
+	// Takes a score function (input: client, facility) and assigns preferences using a score (return value of score function). High scores translate to high preference
+	auto assign_preferences = [this](const std::function<double(const int&, const int&)>& score_function) {
+		int facility_id = 0;
+		const int number_of_facilities = this->instance.facilities;
+		int client_id = 0;
+		const int number_of_clients = this->instance.clients;
 
+		// Generator function for scores
+		std::function<std::pair<int, double>(const int&)> generate_scores;
+		generate_scores = [&facility_id,&number_of_facilities, &score_function](const int& client) -> std::pair<int, double> {
+			assert(facility_id < number_of_facilities);
+			std::pair<int, double> facility_score_pair(facility_id, score_function(client, facility_id));
+			facility_id++;
+			return facility_score_pair;
+		};
+		
+		// Predicate to order pairs
+		std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> LEQ;
+		LEQ = [](const std::pair<int, double>& facility_score_a, const std::pair<int, double>& facility_score_b) -> bool {return facility_score_a.second <= facility_score_b.second; };
+
+		// Generator function for preferences
+		std::function<client_preference_vector()> generate_preferences;
+		generate_preferences = [&facility_id, &client_id, &number_of_clients, &generate_scores, &LEQ]() -> client_preference_vector {
+			assert(client_id < number_of_clients);
+			std::vector<std::pair<int, double>> facility_score_pairs({});
+			facility_id = 0;
+			std::generate(std::begin(facility_score_pairs), std::end(facility_score_pairs), generate_scores);
+			// Sort in ascending order
+			std::sort(std::begin(facility_score_pairs), std::end(facility_score_pairs), LEQ);
+			// Reverse order
+			std::reverse(std::begin(facility_score_pairs), std::end(facility_score_pairs));
+			client_id++;
+			return projection_1_2<int, double>(facility_score_pairs);
+		};
+
+		// Execution
+		this->instance.preferences.clear();
+		std::generate(std::begin(this->instance.preferences), std::end(this->instance.preferences), generate_preferences);
+	};
+
+	std::function<double(const int&, const int&)> score_function;
 	switch(category){
-		case cooperative:
-			// Preferences = Shortest distance is most preferred
-			for (int i = 0; i < instance.clients; i++) {
-				facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
-				for (int j = 0; j < instance.facilities; j++) {
-					double dist = this->instance.distribution_costs[j][i];
-					bisect_insert(facility_distribution_cost_pairs, std::pair<int, double>(j, dist), sort_by_second);
-				}
-				this->instance.preferences[i] = projection_1_2<int, double>(facility_distribution_cost_pairs);
-			}
-			return;
-		case linear_bias:
-			// Preference = Pertubated distance (draw from triangular distribution)
-			for (int i = 0; i < instance.clients; i++) {
-				// Initial values, they are adjusted in the loop later
-				double min_dist_of_client = this->instance.distribution_costs[0][i];
-				double max_dist_of_client = this->instance.distribution_costs[0][i];
-				// Compute minimum and maximum dist cost of client
-				for (int j = 1; j < instance.facilities; j++) {
-					double next_dist_costs = this->instance.distribution_costs[j][i];
-					if(min_dist_of_client > next_dist_costs){
-						min_dist_of_client = next_dist_costs;
-					}
-					else if(max_dist_of_client < next_dist_costs){
-						max_dist_of_client = next_dist_costs;
-					}
-				}
-				facility_distribution_cost_pairs = std::vector<std::pair<int, double>>();
-				// Use minimum and maximum as well as the true distance to draw fake costs from a triangular distribution
-				for (int j = 0; j < instance.facilities; j++) {
-					double true_cost = this->instance.distribution_costs[j][i];
-					double dist = triangular(min_dist_of_client, max_dist_of_client, true_cost);
-					bisect_insert(facility_distribution_cost_pairs, std::pair<int, double>(j, dist), sort_by_second);
-				}
-				this->instance.preferences[i] = projection_1_2<int, double>(facility_distribution_cost_pairs);
-			}
-			return;
+		case closest_assignment:
+			score_function = [this](const int& client, const int& facility) {
+				return this->instance.distribution_costs[facility][client] * -1; //Remember: High value = High preference.
+			};
+			break;
+		case perturbed_closest_assignment:
+			score_function = [this](const int& client, const int& facility) {
+				// Determine minimal and maximal distances
+				std::function<double(const int&)> D([this, &client](const int& facility_id) -> double { return this->instance.distribution_costs[facility_id][client]; });
+				std::vector<double> client_distances(this->instance.facilities);
+				std::iota(std::begin(client_distances), std::end(client_distances), 0); // Fill with 0,1,2,...
+				std::transform(std::begin(client_distances), std::end(client_distances), std::begin(client_distances), D);
+				double min_dist = *std::min_element(std::begin(client_distances), std::end(client_distances));
+				double max_dist = *std::max_element(std::begin(client_distances), std::end(client_distances));
+				double true_cost = this->instance.distribution_costs[facility][client];
+				return triangular(min_dist, max_dist, true_cost) * -1; //Remember: High value = High preference.
+			};
+			break;
+		case farthest_assignment:
+			score_function = [this](const int& client, const int& facility) {
+				return this->instance.distribution_costs[facility][client];
+			};
+			break;
 		default:
-			throw std::runtime_error("Category" + std::to_string(category) + " is not defined.");
+			throw std::runtime_error("Category " + std::to_string(category) + " is not defined.");
+	}
+	assign_preferences(score_function);
+}
+
+void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& path, const bool overwrite){
+	// Check if we don't accidentally overwrite an existing file
+	if(!overwrite && std::ifstream(path)){
+		std::cout << "File already exists. Results are not saved!" << std::endl;
+		return;
+	}
+	// Create string
+	{
+		std::ofstream out(path);
+		int J = ref_instance.facilities;
+		int I = ref_instance.clients;
+		out << std::to_string(J) + "\t" + std::to_string(I) << "\n\n";
+		// Demands
+		for (int client = 0; client < I; client++) {
+			out << std::to_string(ref_instance.demands[client]) + "\t";
+		}
+		out << "\n\n";
+		// Capacities
+		for (int facility = 0; facility < J; facility++) {
+			out << std::to_string(ref_instance.capacities[facility]) + "\t";
+		}
+		out << "\n\n";
+		// Opening costs
+		for (int facility = 0; facility < J; facility++) {
+			out << std::to_string(ref_instance.facility_costs[facility]) + "\t";
+		}
+		out << "\n\n";
+		// Distance/Distribution costs
+		std::string line = "";
+		for (int facility = 0; facility < J; facility++) {
+			for (int client = 0; client < I; client++) {
+				line += std::to_string(ref_instance.distribution_costs[facility][client]) + "\t";
+			}
+			line += "\n";
+		}
+		out << line << "\n";
+		// Preferences
+		line = "";
+		for (int client = 0; client < I; client++) {
+			for (int facility = 0; facility < J; facility++) {
+				line += std::to_string(ref_instance.preferences[client][facility]) + "\t";
+			}
+			line += "\n";
+		}
+		line.pop_back();
+		out << line;
+		out.close();
 	}
 }
 
-
-
-void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& filename, bool overwrite){
-	// Check if we can write the file in the first place.
-	if(!overwrite){
-		std::ifstream file;
-		file.open(filename);
-		if(file){
-			file.close();
-			return;
-		}
-		file.close();
-	}
-	// Put data into the corresponding strings
-	int J = ref_instance.facilities;
-	int I = ref_instance.clients;
-	std::ofstream out(filename);
-	out << std::to_string(J) + "\t" + std::to_string(I) << "\n\n";
-	std::string line5 = "";
-	std::string line6 = "";
-	// Demands
-	for(int client = 0; client < I; client++){
-		out << std::to_string(ref_instance.demands[client]) + "\t";
-	}
-	out << "\n\n";
-	// Capacities
-	for(int facility = 0; facility < J; facility++){
-		out << std::to_string(ref_instance.capacities[facility]) + "\t";
-	}
-	out << "\n\n";
-	// Opening costs
-	for(int facility = 0; facility < J; facility++){
-		out << std::to_string(ref_instance.facility_costs[facility]) + "\t";
-	}
-	out << "\n\n";
-	// Distance/Distribution costs
-	for(int facility = 0; facility < J; facility++){
-		for(int client = 0; client < I; client++){
-			line5 += std::to_string(ref_instance.distribution_costs[facility][client]) + "\t";
-		}
-		line5 += "\n";
-	}
-	out << line5 << "\n";
-	// Preferences
-	for(int client = 0; client < I; client++){
-		for(int facility = 0; facility < J; facility++){
-			line6 += std::to_string(ref_instance.preferences[client][facility]) + "\t";
-		}
-		line6 += "\n";
-	}
-	line6.pop_back();
-	out << line6;
-	out.close();
-}
-
-SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_included, Category category){
-	std::ifstream file(filename);
+SSCFLSO Generator::load_instance(const std::string& path, const bool preferences_included, const Category category){
+	std::ifstream file(path);
 	if(!file){
-		throw std::runtime_error("SSCFLSO Generator: Load failed. Cannot find file: " + filename);
+		throw std::runtime_error("SSCFLSO Generator: Load failed. Cannot find file: " + path);
 	}
-	// Parse data - Extract numbers (including `.` for floating points) only.
-	char current_character;
-	std::string symbol = "";
-	std::vector<double> data = std::vector<double>();
-	while(file){
-		file.get(current_character);
-		// integer value/char: 48 = '0', 57 = '9', and 46 = '.'
-		if((current_character >= 48 && current_character <= 57) || current_character == 46){
-			symbol += current_character; 
+	std::vector<double> data({});
+	{
+		// Parse data - Extract only numerical symbols (including `.` for floating points).
+		char current_character;
+		std::string symbol = "";
+		while (file) {
+			file.get(current_character);
+			// integer value/char: 48 = '0', 57 = '9', and 46 = '.'
+			if ((current_character >= 48 && current_character <= 57) || current_character == 46) {
+				symbol += current_character;
+			}
+			else if (!symbol.empty()) {
+				data.push_back(stof(symbol));
+				symbol = "";
+			}
 		}
-		else if(!symbol.empty()){
+		if (symbol != "") {
 			data.push_back(stof(symbol));
-			symbol = "";
 		}
-	}
-	if (symbol != "") {
-		data.push_back(stof(symbol));
 	}
 	// Construct instance
 	int J = int(data[0]);
 	int I = int(data[1]);
-
-	// Quick assertion
-	if (preferences_included) {
-		assert(data.size() == 2 + I + 2*J + 2*I*J);
-	}
-	else {
-		assert(data.size() == 2 + I + 2 * J + I * J);
-	}
-
 	Generator res(J, I);
-	int counter = 0;
-	int index = 2;
-	// Demands
-	for(int access = index; access < index + I; access++){
-		res.set_demand(counter, data[access]);
-		counter++;
+	{
+		// Depending on whether preferences are included, the loaded file has a specific number of values
+		// 2 for the numbers I, J; I for demands; 2*J for capacities and facility cost; I * J for distribution costs; I * J for preferences
+		int correct_number_of_values = 2 + I + (2 * J) + (I * J * (preferences_included + 1));
+		assert(data.size() == correct_number_of_values);
 	}
-	counter = 0;
-	index += I;
-	// Capacities
-	for(int access = index; access < index + J; access++){
-		res.set_capacity(counter, data[access]);
-		counter++;
-	}
-	counter = 0;
-	index += J;
-	// Open costs
-	for(int access = index; access < index + J; access++){
-		res.set_facility_cost(counter, data[access]);
-		counter++;
-	}
-	counter = 0;
-	index += J;
-	// Distribution costs
-	for(int facility = 0; facility < J; facility++){
-		for(int access = (index + facility * I); access < (index + (facility + 1) * I); access++){
-			res.set_distribution_cost(facility, counter, data[access]);
+	{
+		int counter = 0;
+		int index = 2;
+		// Demands
+		for (int access = index; access < index + I; access++) {
+			res.set_demand(counter, data[access]);
 			counter++;
 		}
 		counter = 0;
+		index += I;
+		// Capacities
+		for (int access = index; access < index + J; access++) {
+			res.set_capacity(counter, data[access]);
+			counter++;
+		}
+		counter = 0;
+		index += J;
+		// Open costs
+		for (int access = index; access < index + J; access++) {
+			res.set_facility_cost(counter, data[access]);
+			counter++;
+		}
+		counter = 0;
+		index += J;
+		// Distribution costs
+		for (int facility = 0; facility < J; facility++) {
+			for (int access = (index + facility * I); access < (index + (facility + 1) * I); access++) {
+				res.set_distribution_cost(facility, counter, data[access]);
+				counter++;
+			}
+			counter = 0;
+		}
+		index += J * I;
 	}
-	index += J * I;
+	
 	// Preferences
+	int tmp = (2 + I + 2 * J + I * J);
 	if(!preferences_included){
 		res.set_preferences(category);
 	}
@@ -193,7 +218,7 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 		for(int client = 0; client < I; client++){
 			std::vector<int> preferences_of_client = std::vector<int>();
 			// Maybe here a cast problem, we'll see
-			for(int access = (index + client * J); access < (index + (client + 1) * J); access++){
+			for (int access = (tmp + client * J); access < (tmp + (client + 1) * J); access++) {
 				preferences_of_client.push_back(data[access]);
 			}
 			res.instance.preferences[client] = preferences_of_client;
@@ -202,68 +227,23 @@ SSCFLSO Generator::load_instance(const std::string& filename, bool preferences_i
 	return res.instance;
 }
 
-void Generator::i300(const std::string& filename){
-	// Create own i300 instances
-	int J = this->instance.facilities;
-	int I = this->instance.clients;
-	this->instance.demands = std::vector<double>(I, 0);
-	this->instance.capacities = std::vector<double>(J, 0);
-	this->instance.facility_costs = std::vector<double>(J, 0);
-	this->instance.distribution_costs = std::vector<std::vector<double>>(J, std::vector<double>(I, 0));
-	this->instance.preferences = std::vector<std::vector<int>>(I, std::vector<int>(J, 0));
-	auto u = []{return uniform(0, 1);};
-	std::vector<std::pair<double, double>> clients = std::vector<std::pair<double, double>>();
-	std::vector<std::pair<double, double>> facilities = std::vector<std::pair<double, double>>();
-	// Demands
-	for(int client = 0; client < I; client++){
-		clients.push_back(std::pair<double, double>(u(), u()));
-		this->instance.demands[client] = uniform(5, 35);
-	}
-	// Preliminary capacity cost
-	std::vector<double> prelim_capacities = std::vector<double>();
-	for(int facility = 0; facility < J; facility++){
-		facilities.push_back(std::pair<double, double>(u(), u()));
-		// Dist costs
-		for(int client = 0; client < I; client++){
-			double c_x = clients[client].first;
-			double c_y = clients[client].second;
-			double f_x = facilities[facility].first;
-			double f_y = facilities[facility].second;
-			this->instance.distribution_costs[facility][client] = 10 * sqrt( (pow(c_x - f_x, 2)) * (pow(c_y - f_y, 2)) );
-		}
-		prelim_capacities.push_back(uniform(10, 160)); 
-	}
-	double sum_of_capacities = std::accumulate(prelim_capacities.begin(), prelim_capacities.end(), 0);
-	double sum_of_demands = std::accumulate(this->instance.demands.begin(), this->instance.demands.end(), 0);
-	double ratio = sum_of_capacities/sum_of_demands;
-	// Actual capacity and opening cost
-	for(int facility = 0; facility < J; facility++){
-		double capacity = ratio * prelim_capacities[facility];
-		this->instance.capacities[facility] = capacity;
-		this->instance.facility_costs[facility] = uniform(0, 90) + uniform(100, 110) * sqrt(capacity);
-	}
-	if(!filename.empty()){
-		this->save_instance(this->instance, filename, true);
-	}
+// Setter and Getter
+const SSCFLSO& Generator::get_instance() {
+	return this->instance;
 }
 
-// Setter and Getter
-void Generator::set_demand(int client, double demand) {
+void Generator::set_demand(const int client, const double demand) {
 	this->instance.demands[client] = demand;
 }
 
-void Generator::set_capacity(int facility, double capacity) {
+void Generator::set_capacity(const int facility, const double capacity) {
 	this->instance.capacities[facility] = capacity;
 }
 
-void Generator::set_facility_cost(int facility, double facility_cost) {
+void Generator::set_facility_cost(const int facility, const double facility_cost) {
 	this->instance.facility_costs[facility] = facility_cost;
 }
 
-void Generator::set_distribution_cost(int facility, int client, double distribution_cost) {
+void Generator::set_distribution_cost(const int facility, const int client, const double distribution_cost) {
 	this->instance.distribution_costs[facility][client] = distribution_cost;
-}
-
-SSCFLSO Generator::get_instance() {
-	return this->instance;
 }
