@@ -7,6 +7,9 @@
 class Validator{
 	public:
 		Validator(const SSCFLSO&);
+		Validator operator=(const Validator) {
+			return *this;
+		};
 		void set_solution(const facility_vector&);
 		const facility_vector& get_solution();
 		const client_facility_assignment& get_assignment();

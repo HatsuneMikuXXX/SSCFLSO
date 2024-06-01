@@ -2,8 +2,8 @@
 #define PREPROCESS_UNIT_TEST_H
 #include "algorithmClass.h"
 #include "../SSCFLSO/SSCFLSO_generator.h"
-#include "Preprocess/Preprocess.h"
-namespace PreprocessUnitTest{
+
+namespace AlgorithmUnitTest{
 	/// @brief Run all tests.
 	/// @return Every test passed.
 	bool run_tests();

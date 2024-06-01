@@ -1,8 +1,8 @@
 #include "unit_test.h"
 
-bool PreprocessUnitTest::run_tests(){
+bool AlgorithmUnitTest::run_tests(){
 	try{
-		std::cout << "Running Preprocess Test 1..." << std::endl;
+		std::cout << "Running Algorithm Test 1. Improve a solution." << std::endl;
 		test1();
 		std::cout << "OK" << std::endl;
 	}
@@ -13,21 +13,21 @@ bool PreprocessUnitTest::run_tests(){
 	return true;
 }
 
-void PreprocessUnitTest::test1(){
-	facility_vector check = facility_vector(100, 0);
-	SSCFLSO instance = Generator::load_instance("instances/unit_tests/unit_test_infeasible1.plc");
-	Preprocess preprocess = Preprocess();
-	if(preprocess.preprocess(instance) != check){
-		throw std::runtime_error("Solution space is empty but a feasible solution has still been found.");
-	}
-	check[69] = 1;
-	instance = Generator::load_instance("instances/unit_tests/unit_test_only69.plc");
-	if(preprocess.preprocess(instance) != check){
-		throw std::runtime_error("Only facility 69 can be opened but the returned solution is different.");
-	}
-	instance = Generator::load_instance("instances/unit_tests/unit_test_preprocess.plc");
-	check = preprocess.preprocess(instance);
-	if(check[0] == 1) {
-		throw std::runtime_error("Facility 0 is unnecessary but still included.");
-	}
+void AlgorithmUnitTest::test1(){
+	SSCFLSO instance = Generator::load_instance("instances/unit_tests/unit_test_small.plc");
+	solution_and_value SV = {facility_vector(instance.facilities, 0), -1};
+	facility_vector solution({1, 1, 0, 0, 0});
+	Timer timer(10 * 1000);
+	ReportResult report(instance, "Small", "results/test/AlgorithmUnitTest.json");
+	Algorithm::UPDATE_CODE expected_result;
+	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report, true);
+	assert(expected_result == Algorithm::UPDATE_CODE::TIMER_NOT_RUNNING);
+	timer.start_timer();
+	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report, true);
+	assert(expected_result == Algorithm::UPDATE_CODE::IMPROVED);
+	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report, true);
+	assert(expected_result == Algorithm::UPDATE_CODE::NOT_IMPROVED);
+	while (timer.in_time()) {}
+	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report, true);
+	assert(expected_result == Algorithm::UPDATE_CODE::TIMEOUT);
 }

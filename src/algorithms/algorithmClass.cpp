@@ -1,17 +1,19 @@
 #include "algorithmClass.h"
 
 Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& new_solution, Timer& timer, ReportResult& report, bool searchingForFeasibleSolution = false) {
+	if (!timer.running_status()) {
+		return Algorithm::TIMER_NOT_RUNNING;
+	}
 	timer.pause_timer();
 	if (!timer.in_time()) {
-		report.finishUp();
 		return Algorithm::TIMEOUT;
 	}
-	Validator FLV = Validator(instance);
+	Validator FLV(instance);
 	FLV.set_solution(new_solution);
 	solution_and_value forTheReport = { new_solution, FLV.value() };
 	if (searchingForFeasibleSolution) {
 		// Use Rating
-		if (FLV.evaluate_inf_solution() < current_best.val) {
+		if (FLV.evaluate_inf_solution() < current_best.val || current_best.val == 1) {
 			report.evalResult(forTheReport, timer);
 			timer.proceed_with_timer();
 			current_best.sol = new_solution;
@@ -31,7 +33,7 @@ Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solu
 
 class myCallback : public GRBCallback {
 public:
-	Validator* FLV;
+	Validator FLV;
 	Timer* timer;
 	ReportResult* report;
 	GRBVar* open;
@@ -39,7 +41,7 @@ public:
 	solution_and_value* current_best;
 	myCallback(GRBVar* open, const SSCFLSO& instance, solution_and_value& current_best,Timer& timer, ReportResult& report) {
 		this->open = open;
-		this->FLV = &Validator(instance);
+		this->FLV = Validator(instance);
 		this->numFacilities = instance.facilities;
 		this->timer = &timer;
 		this->report = &report;
@@ -50,17 +52,17 @@ protected:
 		timer->pause_timer();
 		try {
 			if (where == GRB_CB_MIPSOL) {
-				facility_vector solution = facility_vector(numFacilities, -1);
+				facility_vector solution(numFacilities, -1);
 				for (int j = 0; j < this->numFacilities; j++) {
 					solution[j] = open[j].get(GRB_DoubleAttr_X);
 				}
-				this->FLV->set_solution(solution);
-				if (this->FLV->feasible() && this->FLV->value() < this->current_best->val && timer->in_time()) {
+				this->FLV.set_solution(solution);
+				if (this->FLV->feasible() && this->FLV.value() < this->current_best->val && timer->in_time()) {
 					this->current_best->sol = solution;
-					this->current_best->val = FLV->value();
+					this->current_best->val = FLV.value();
 					this->report->evalResult(*this->current_best, *this->timer);
 				}
-				std::cout << "Solution value: " << this->FLV->value() << std::endl;
+				std::cout << "Solution value: " << this->FLV.value() << std::endl;
 			}
 		}
 		catch (GRBException e) {

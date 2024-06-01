@@ -111,7 +111,7 @@ void start_UI(int argc, char* argv[]) {
                     SSCFLSO instance = Generator::load_instance(inputSource + "/" + filename, true);
                     for (int i = 0; i < algoObjectsSize; i++) {
                         if (algoObjects[i] != NULL) {
-                            run(algoObjects[i], runAlgoWithGurobi, instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit);
+                            run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
                         }
                     }
                 }
@@ -135,7 +135,7 @@ void start_UI(int argc, char* argv[]) {
             }
             for (int i = 0; i < algoObjectsSize; i++) {
                 if (algoObjects[i] != NULL) {
-                    run(algoObjects[i], runAlgoWithGurobi, instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit);
+                    run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
                 }
             }
             

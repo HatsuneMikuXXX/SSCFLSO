@@ -25,22 +25,25 @@ void Generator::set_preferences(const Category category){
 		const int number_of_clients = this->instance.clients;
 
 		// Generator function for scores
-		std::function<std::pair<int, double>(const int&)> generate_scores;
-		generate_scores = [&facility_id,&number_of_facilities, &score_function](const int& client) -> std::pair<int, double> {
-			assert(facility_id < number_of_facilities);
-			std::pair<int, double> facility_score_pair(facility_id, score_function(client, facility_id));
-			facility_id++;
-			return facility_score_pair;
-		};
+		const std::function<std::pair<int, double>(const int&)> generate_scores(
+			[&facility_id, &number_of_facilities, &score_function](const int& client) -> std::pair<int, double> {
+				assert(facility_id < number_of_facilities);
+				std::pair<int, double> facility_score_pair(facility_id, score_function(client, facility_id));
+				facility_id++;
+				return facility_score_pair;
+			});
 		
 		// Predicate to order pairs
-		std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> LEQ;
-		LEQ = [](const std::pair<int, double>& facility_score_a, const std::pair<int, double>& facility_score_b) -> bool {return facility_score_a.second <= facility_score_b.second; };
+		const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> LEQ(
+			[](const std::pair<int, double>& facility_score_a, const std::pair<int, double>& facility_score_b) -> bool {
+				return facility_score_a.second <= facility_score_b.second; 
+			});
 
 		// Generator function for preferences
-		std::function<client_preference_vector()> generate_preferences;
-		generate_preferences = [&facility_id, &client_id, &number_of_clients, &generate_scores, &LEQ]() -> client_preference_vector {
+		const std::function<client_preference_vector()> generate_preferences([&facility_id, &client_id, &number_of_clients, &number_of_facilities, &generate_scores, &LEQ]() -> client_preference_vector {
 			assert(client_id < number_of_clients);
+			client_preference_vector res(number_of_facilities);
+			// Generate scores
 			std::vector<std::pair<int, double>> facility_score_pairs({});
 			facility_id = 0;
 			std::generate(std::begin(facility_score_pairs), std::end(facility_score_pairs), generate_scores);
@@ -48,9 +51,11 @@ void Generator::set_preferences(const Category category){
 			std::sort(std::begin(facility_score_pairs), std::end(facility_score_pairs), LEQ);
 			// Reverse order
 			std::reverse(std::begin(facility_score_pairs), std::end(facility_score_pairs));
+			// Remove scores
+			std::transform(std::begin(facility_score_pairs), std::end(facility_score_pairs), std::begin(res), [](const std::pair<int, double>& p) -> int { return p.first; });
 			client_id++;
-			return projection_1_2<int, double>(facility_score_pairs);
-		};
+			return res;
+		});
 
 		// Execution
 		this->instance.preferences.clear();
@@ -67,7 +72,7 @@ void Generator::set_preferences(const Category category){
 		case perturbed_closest_assignment:
 			score_function = [this](const int& client, const int& facility) {
 				// Determine minimal and maximal distances
-				std::function<double(const int&)> D([this, &client](const int& facility_id) -> double { return this->instance.distribution_costs[facility_id][client]; });
+				const std::function<double(const int&)> D([this, &client](const int& facility_id) -> double { return this->instance.distribution_costs[facility_id][client]; });
 				std::vector<double> client_distances(this->instance.facilities);
 				std::iota(std::begin(client_distances), std::end(client_distances), 0); // Fill with 0,1,2,...
 				std::transform(std::begin(client_distances), std::end(client_distances), std::begin(client_distances), D);

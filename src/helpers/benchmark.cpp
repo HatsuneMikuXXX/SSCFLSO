@@ -1,20 +1,12 @@
 #include "benchmark.h"
 
-void run(Algorithm* algo, const bool gurobi_afterwards, const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, int timelimit_in_milliseconds) {
-	facility_vector solution = facility_vector(instance.facilities, 0);
+void run(const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, int timelimit_in_milliseconds, Algorithm* algo, const bool gurobi_afterwards) {
+	ReportResult report(instance, instance_name);
+	solution_and_value SV{ facility_vector(instance.facilities, 0) , -1};
 	Timer timer(timelimit_in_milliseconds);
-
-
-	algo->solve(instance, solution, timelimit_as_chrono, gurobi_afterwards);
-	auto measured_time = DoNothingObject.get_elapsed_time_ms(start).count();
-	Validator FLV = Validator(instance);
-	FLV.set_solution(solution);
-	/*
-	std::string meta_info = algo->meta_information();
-	{
-		meta_info.erase(std::remove(meta_info.begin(), meta_info.end(), '\n'), meta_info.end());
-	}
-	*/
+	algo->solve(instance, SV, timer, report, gurobi_afterwards);
+	report.finishUp(save_to_path);
+	
 	std::ofstream out(save_to_path);
 	out << "{\n\t";
 	out << "\"Instance id\" : \"" << instance_name << "\",\n\t";

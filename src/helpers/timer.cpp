@@ -1,6 +1,6 @@
 #include "timer.h"
 
-Timer::Timer(double time_limit_in_ms) {
+Timer::Timer(int time_limit_in_ms) {
 	this->total_time = time_limit_in_ms;
 	this->elapsed_time_until_last_pause = 0;
 	this->running = false;
@@ -46,4 +46,12 @@ void Timer::proceed_with_timer() {
 
 bool Timer::in_time() {
 	return (running) ? this->get_remaining_time() >= 0 : true;
+}
+
+bool Timer::running_status() {
+	return running;
+}
+
+int Timer::time_limit() {
+	return this->total_time;
 }

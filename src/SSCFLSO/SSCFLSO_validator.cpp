@@ -14,7 +14,7 @@ void Validator::set_solution(const facility_vector& solution){
 	{
 		// Solution vector must be binary
 		assert((solution.size() == this->ref_instance.facilities), "Solution length is incorrect");
-		std::function<bool(const int&)> is_binary([](const int& solution_entry) -> bool { return solution_entry == 0 || solution_entry == 1; });
+		const std::function<bool(const int&)> is_binary([](const int& solution_entry) -> bool { return solution_entry == 0 || solution_entry == 1; });
 		assert(std::all_of(std::begin(solution), std::end(solution), is_binary));
 	}
 	this->solution = solution;
@@ -29,11 +29,10 @@ void Validator::set_solution(const facility_vector& solution){
 	// Determine assignment.
 	const preference_matrix& preferences = this->ref_instance.preferences;
 	const std::function<bool(const int&)> is_open([&solution](const int& facility) -> bool { return solution[facility] == 1; });
-	std::function<int(const int&)> find_most_preferred_and_open;
-	find_most_preferred_and_open = [&preferences, &is_open](const int& client) -> int {
+	const std::function<int(const int&)> find_most_preferred_and_open([&preferences, &is_open](const int& client) -> int {
 		auto res_it = std::find_if(std::begin(preferences[client]), std::end(preferences[client]), is_open);
 		return std::distance(std::begin(preferences[client]), res_it);
-	};
+	});
 	std::iota(std::begin(this->assignment), std::end(this->assignment), 0); // Elements are considered as clients for the transformation next
 	std::transform(std::begin(this->assignment), std::end(this->assignment), std::begin(this->assignment), find_most_preferred_and_open);
 
@@ -41,8 +40,7 @@ void Validator::set_solution(const facility_vector& solution){
 	client_vector clients(this->ref_instance.clients);
 	std::iota(std::begin(clients), std::end(clients), 0);
 	const distribution_cost_matrix& distribution_costs = this->ref_instance.distribution_costs;
-	std::function<void(const int&)> add_distribution_cost;
-	add_distribution_cost = ([this, &distribution_costs](const int& client) -> void {
+	const std::function<void(const int&)> add_distribution_cost([this, &distribution_costs](const int& client) -> void {
 		this->solution_value += distribution_costs[this->assignment[client]][client];
 	});
 	
@@ -52,14 +50,13 @@ void Validator::set_solution(const facility_vector& solution){
 }
 
 facility_vector Validator::exceeds_capacity(){
-	facility_vector capacity_exceeding_facilities = facility_vector(this->ref_instance.facilities, 0);
+	facility_vector capacity_exceeding_facilities(this->ref_instance.facilities, 0);
 	capacity_vector capacities = this->ref_instance.capacities;
-	client_vector clients = client_vector(this->ref_instance.clients);
+	client_vector clients(this->ref_instance.clients);
 	std::iota(std::begin(clients), std::end(clients), 0);
 
 	// Reduce each capacity by the assigned demands. 
-	std::function<void(const int&)> reduce_capacity;
-	reduce_capacity = ([&capacities, this](const int& client) -> void {
+	const std::function<void(const int&)> reduce_capacity([&capacities, this](const int& client) -> void {
 		capacities[this->assignment[client]] -= this->ref_instance.demands[client];
 	});
 	std::for_each(std::begin(clients), std::end(clients), reduce_capacity);
