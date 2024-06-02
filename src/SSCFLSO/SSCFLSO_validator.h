@@ -11,9 +11,9 @@ class Validator{
 			return *this;
 		};
 		void set_solution(const facility_vector&);
-		const facility_vector& get_solution();
-		const client_facility_assignment& get_assignment();
-		double value();
+		const facility_vector& get_solution() const;
+		const client_facility_assignment& get_assignment() const;
+		double value() const;
 		bool feasible();
 		// A binary facility vector of all facilities that exceed their capacity
 		facility_vector exceeds_capacity();
@@ -23,12 +23,10 @@ class Validator{
 		void drop_empty_facilities();
 	private:
 		const SSCFLSO& ref_instance;
-		// Solution is a binary vector
-		facility_vector solution;
-		double solution_value;
-		//Index = Facility, Value = Client
-		client_facility_assignment assignment;
-		alreadyComputed<bool> Feasibility;
-		alreadyComputed<double> Rating;
+		facility_vector solution; // Solution is a binary vector
+		double solution_value{-1};
+		client_facility_assignment assignment; //Index = Facility, Value = Client
+		alreadyComputed<bool> Feasibility{alreadyComputed<bool>()};
+		alreadyComputed<double> Rating{alreadyComputed<double>()};
 };
 #endif

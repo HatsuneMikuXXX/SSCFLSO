@@ -1,13 +1,12 @@
 #include "report_result.h"
 
-ReportResult::ReportResult(const SSCFLSO& instance, const std::string& instance_name) {
-	Validator tmp = Validator(instance);
-	this->FLV = tmp;
-	this->instance_name = instance_name;
-	this->finishedUp = false;
-	this->time_stamps = std::vector<double>();
-	this->value_stamps = std::vector<double>();
-	this->number_of_facilities_stamps = std::vector<int>();
+ReportResult::ReportResult(
+	const SSCFLSO& instance, 
+	const std::string& instance_name, 
+	const int timelimit, 
+	const std::string algorithm_name, 
+	const bool gurobi_postprocessing) :
+	instance(instance), instance_name(instance_name) {
 }
 
 void ReportResult::evalResult(const solution_and_value& current_best, Timer& timer) {
@@ -27,9 +26,11 @@ void ReportResult::finishUp(const std::string& save_to_path) {
 	std::ofstream out(save_to_path);
 	out << "{\"Instance ID\" : \"" << this->instance_name << "\", ";
 	out << "\"Time limit\" : \"" << this-> << "\", ";
-	out << "\"Last solution (LS)\" : " << primitive_list_to_string(this->LastSolution.sol) << ", ";
-	out << "\"LS value\" : " << this->LastSolution.val << ", ";
-	out << "\"LS feasible\" : " << this->LastSolutionFeasible << ", ";
+	out << "\"Algorithm\" : \"" << instance_name << "\",\n\t";
+	out << "\"Gurobi Postprocessing\" : \"" << instance_name << "\",\n\t";
+	out << "\"Feasible\" : " << this->LastSolutionFeasible << ", ";
+	out << "\"Solution Value\" : " << this->LastSolution.val << ", ";
+	out << "\"Solution\" : " << primitive_list_to_string(this->LastSolution.sol) << ", ";
 	out << "\"Time stamps\" : " << primitive_list_to_string(this->time_stamps) << ", ";
 	out << "\"Value stamps\" : " << primitive_list_to_string(this->value_stamps) << ", ";
 	out << "\"Number of open facilities stamps\" : " << primitive_list_to_string(this->number_of_facilities_stamps) << "} ";

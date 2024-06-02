@@ -2,6 +2,7 @@
 #define SSCFLSO_UNIT_TEST_H
 #include "SSCFLSO_validator.h"
 #include "SSCFLSO_generator.h"
+#include "../helpers/utility.h"
 /// @brief Test the functionalities of the modules `Validator` and `Generator`.
 namespace SSCFLSOUnitTest{
 	/// @brief Run all tests.

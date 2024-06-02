@@ -2,10 +2,7 @@
 
 Validator::Validator(const SSCFLSO& instance) : ref_instance(instance){
 	this->solution = facility_vector(instance.facilities, 0);
-	this->solution_value = -1; 
-	this->assignment = client_facility_assignment(ref_instance.clients, -1);
-	this->Feasibility = alreadyComputed<bool>();
-	this->Rating = alreadyComputed<double>();
+	this->assignment = client_facility_assignment(instance.clients, -1);
 }
 
 void Validator::set_solution(const facility_vector& solution){
@@ -14,11 +11,10 @@ void Validator::set_solution(const facility_vector& solution){
 	{
 		// Solution vector must be binary
 		assert((solution.size() == this->ref_instance.facilities), "Solution length is incorrect");
-		const std::function<bool(const int&)> is_binary([](const int& solution_entry) -> bool { return solution_entry == 0 || solution_entry == 1; });
-		assert(std::all_of(std::begin(solution), std::end(solution), is_binary));
+		assert(std::all_of(std::begin(solution), std::end(solution), [](const int& b) -> bool { return b == 0 || b == 1; }));
 	}
 	this->solution = solution;
-	if(sum(solution) == 0){
+	if (std::all_of(std::begin(solution), std::end(solution), [](const int& facility_open) -> bool { return facility_open == 0; })) {
 		this->Feasibility.aCom = true;
 		this->Feasibility.value = false;
 		this->assignment = client_facility_assignment(this->ref_instance.clients, -1);
@@ -30,7 +26,7 @@ void Validator::set_solution(const facility_vector& solution){
 	const preference_matrix& preferences = this->ref_instance.preferences;
 	const std::function<bool(const int&)> is_open([&solution](const int& facility) -> bool { return solution[facility] == 1; });
 	const std::function<int(const int&)> find_most_preferred_and_open([&preferences, &is_open](const int& client) -> int {
-		auto res_it = std::find_if(std::begin(preferences[client]), std::end(preferences[client]), is_open);
+		const auto res_it = std::find_if(std::begin(preferences[client]), std::end(preferences[client]), is_open);
 		return std::distance(std::begin(preferences[client]), res_it);
 	});
 	std::iota(std::begin(this->assignment), std::end(this->assignment), 0); // Elements are considered as clients for the transformation next
@@ -70,7 +66,7 @@ facility_vector Validator::exceeds_capacity(){
 		}
 		cap_it++;
 	}
-	int sum_of_capacity_exceeding_facilities = sum(capacity_exceeding_facilities);
+	const int sum_of_capacity_exceeding_facilities = sum(capacity_exceeding_facilities);
 	this->Feasibility.aCom = true;
 	this->Feasibility.value = sum_of_capacity_exceeding_facilities == 0;
 	this->Rating.aCom = true;
@@ -93,16 +89,15 @@ double Validator::evaluate_inf_solution() {
 	return (this->Rating.aCom) ? this->Rating.value : sum(this->exceeds_capacity());
 }
 
-
-const facility_vector& Validator::get_solution() {
+const facility_vector& Validator::get_solution() const {
 	return this->solution;
 }
 
-const client_facility_assignment& Validator::get_assignment() {
+const client_facility_assignment& Validator::get_assignment() const {
 	return this->assignment;
 }
 
-double Validator::value() {
+double Validator::value() const {
 	return this->solution_value;
 }
 

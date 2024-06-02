@@ -6,21 +6,26 @@
 
 class ReportResult {
 public:
-	ReportResult(const SSCFLSO& instance, const std::string& instance_name);
+	ReportResult(
+		const SSCFLSO& instance,
+		const std::string& instance_name,
+		const int timelimit,
+		const std::string algorithm_name,
+		const bool gurobi_postprocessing);
 	void evalResult(const solution_and_value& current_best, Timer& timer);
 	void finishUp(const std::string& save_to_path);
 private:
 	// Control flow
-	bool finishedUp;
+	bool finishedUp{false};
 	// Information about the instance
-	Validator FLV;
-	std::string instance_name;
+	const SSCFLSO& instance;
+	const std::string& instance_name;
 	// Information to store
 	solution_and_value LastSolution;
 	bool LastSolutionFeasible;
-	std::vector<double> time_stamps;
-	std::vector<double> value_stamps;
-	std::vector<int> number_of_facilities_stamps;
+	std::vector<double> time_stamps{ std::vector<double>() };
+	std::vector<double> value_stamps{ std::vector<double>() };
+	std::vector<int> number_of_facilities_stamps{ std::vector<int>() };
 };
 
 #endif

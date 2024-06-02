@@ -102,8 +102,8 @@ void Generator::save_instance(const SSCFLSO& ref_instance, const std::string& pa
 	// Create string
 	{
 		std::ofstream out(path);
-		int J = ref_instance.facilities;
-		int I = ref_instance.clients;
+		const int J = ref_instance.facilities;
+		const int I = ref_instance.clients;
 		out << std::to_string(J) + "\t" + std::to_string(I) << "\n\n";
 		// Demands
 		for (int client = 0; client < I; client++) {
@@ -169,8 +169,8 @@ SSCFLSO Generator::load_instance(const std::string& path, const bool preferences
 		}
 	}
 	// Construct instance
-	int J = int(data[0]);
-	int I = int(data[1]);
+	const int J = int(data[0]);
+	const int I = int(data[1]);
 	Generator res(J, I);
 	{
 		// Depending on whether preferences are included, the loaded file has a specific number of values
@@ -214,7 +214,7 @@ SSCFLSO Generator::load_instance(const std::string& path, const bool preferences
 	}
 	
 	// Preferences
-	int tmp = (2 + I + 2 * J + I * J);
+	const int tmp = (2 + I + 2 * J + I * J);
 	if(!preferences_included){
 		res.set_preferences(category);
 	}
@@ -233,7 +233,7 @@ SSCFLSO Generator::load_instance(const std::string& path, const bool preferences
 }
 
 // Setter and Getter
-const SSCFLSO& Generator::get_instance() {
+const SSCFLSO& Generator::get_instance() const {
 	return this->instance;
 }
 
