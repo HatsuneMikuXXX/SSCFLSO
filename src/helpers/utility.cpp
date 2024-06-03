@@ -1,15 +1,5 @@
 #include "utility.h"
 
-std::vector<int> inverse(const std::vector<int>& index_set){
-	std::vector<int> res = std::vector<int>(index_set.size(), 0);
-	int i = 0;
-	for(auto it = index_set.begin(); it != index_set.end(); it++){
-		res[*it] = i;
-		i++;
-	}
-	return res;
-}
-
 void filter(facility_vector& facilities, const facility_predicate& predicate) {
 	for (int j = 0; j < facilities.size(); j++) {
 		if (facilities[j] == 0) { continue; }
@@ -57,10 +47,6 @@ bool are_same(const std::vector<std::vector<double>>& a, const std::vector<std::
 	return true;
 }
 
-bool is_empty(const facility_vector& a) {
-	return sum(a) == 0;
-}
-
 int sum(const std::vector<int>& a) {
 	return std::accumulate(a.begin(), a.end(), 0);
 }
@@ -78,17 +64,13 @@ int hamming_distance(facility_vector& a, facility_vector& b) {
 
 double magnitude(const std::vector<double>& v) {
 	double res = 0;
-	for (auto it = v.begin(); it != v.end(); it++) {
-		res += (*it) * (*it);
-	}
+	std::for_each(std::begin(v), std::end(v), [&res](const double& val) {res += val * val; });
 	return sqrt(res);
 }
 
 std::string primitive_list_to_string(const std::vector<int>& container) {
 	std::string msg = "[";
-	for (auto it = container.begin(); it != container.end(); it++) {
-		msg += std::to_string(*it) + ",";
-	}
+	std::for_each(std::begin(container), std::end(container), [&msg](const double& value) { msg += std::to_string(value) + ","; });
 	msg.pop_back();
 	msg += "]";
 	return msg;
@@ -96,9 +78,7 @@ std::string primitive_list_to_string(const std::vector<int>& container) {
 
 std::string primitive_list_to_string(const std::vector<double>& container) {
 	std::string msg = "[";
-	for (auto it = container.begin(); it != container.end(); it++) {
-		msg += std::to_string(*it) + ",";
-	}
+	std::for_each(std::begin(container), std::end(container), [&msg](const double& value) { msg += std::to_string(value) + ","; });
 	msg.pop_back();
 	msg += "]";
 	return msg;

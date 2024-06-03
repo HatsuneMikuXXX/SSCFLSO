@@ -6,7 +6,11 @@ ReportResult::ReportResult(
 	const int timelimit, 
 	const std::string algorithm_name, 
 	const bool gurobi_postprocessing) :
-	instance(instance), instance_name(instance_name) {
+	instance(instance), 
+	instance_name(instance_name), 
+	timelimit(timelimit), 
+	algorithm_name(algorithm_name), 
+	gurobi_postprocessing(gurobi_postprocessing) {
 }
 
 void ReportResult::evalResult(const solution_and_value& current_best, Timer& timer) {
@@ -20,14 +24,15 @@ void ReportResult::evalResult(const solution_and_value& current_best, Timer& tim
 void ReportResult::finishUp(const std::string& save_to_path) {
 	this->finishedUp = true;
 	// Compute feasibility
-	this->FLV.set_solution(this->LastSolution.sol);
+	Validator FLV = Validator(this->instance);
+	FLV.set_solution(this->LastSolution.sol);
 	this->LastSolutionFeasible = FLV.feasible();
 	// Write result
 	std::ofstream out(save_to_path);
 	out << "{\"Instance ID\" : \"" << this->instance_name << "\", ";
-	out << "\"Time limit\" : \"" << this-> << "\", ";
-	out << "\"Algorithm\" : \"" << instance_name << "\",\n\t";
-	out << "\"Gurobi Postprocessing\" : \"" << instance_name << "\",\n\t";
+	out << "\"Time limit\" : \"" << this->timelimit << "\", ";
+	out << "\"Algorithm\" : \"" << this->algorithm_name << "\",\n\t";
+	out << "\"Gurobi Postprocessing\" : \"" << this->gurobi_postprocessing << "\",\n\t";
 	out << "\"Feasible\" : " << this->LastSolutionFeasible << ", ";
 	out << "\"Solution Value\" : " << this->LastSolution.val << ", ";
 	out << "\"Solution\" : " << primitive_list_to_string(this->LastSolution.sol) << ", ";

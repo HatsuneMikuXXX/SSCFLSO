@@ -50,43 +50,38 @@ void start_UI(int argc, char* argv[]) {
             runFlags++;
             if (runFlags >= 2) {
                 std::cout << "Please use at most one -run flag. Ignoring this and further -run commands; considering only the first one.";
-                break;
             }
             break;
         case INPUT_FILE_PATH:
-            if (runFlags >= 2) {
-                break;
+            if (runFlags < 2) {
+                inputSource = argv[i];
             }
-            inputSource = argv[i];
             break;
         case INPUT_DIRECTORY_PATH:
-            if (runFlags >= 2) {
-                break;
+            if (runFlags < 2) {
+                inputSourceIsDirectory = true;
+                inputSource = argv[i];
             }
-            inputSourceIsDirectory = true;
-            inputSource = argv[i];
             break;
         case OUTPUT_DIRECTORY_PATH:
-            if (runFlags >= 2) {
-                break;
+            if (runFlags < 2) {
+                outputTarget = argv[i];
             }
-            outputTarget = argv[i];
             break;
         case TIMELIMIT:
-            if (runFlags >= 2) {
-                break;
-            }
-            try {
-                timelimit = std::stoi(argv[i]);
-            }
-            catch (std::invalid_argument e) {
-                std::cout << "Timelimit could not be converted. Wrong argument." << std::endl;
+            if (runFlags < 2) {
+                try {
+                    timelimit = std::stoi(argv[i]);
+                }
+                catch (std::invalid_argument e) {
+                    std::cout << "Timelimit could not be converted. Wrong argument." << std::endl;
+                }
             }
             break;
         case NO_TOKEN:
             break;
         default:
-            // Expect Algorithm token
+            // Expect Algorithm token - for safety it's better to enumerate them
             algoObjects[algoObjectsSize] = algorithmFactory(token_string[i]);
             algoObjectsSize++;
             break;
@@ -94,56 +89,10 @@ void start_UI(int argc, char* argv[]) {
     }
 
     // Don't execute run command if not required
-    if (runFlags == 0) {
-        return;
+    if (runFlags > 0) {
+        execute_run_command(inputSourceIsDirectory, inputSource, outputTarget, timelimit, algoObjects, algoObjectsSize, runAlgoWithGurobi);
     }
-    // Check if multiple sources are available
-    if (inputSourceIsDirectory) {
-        DIR* dir; // Directory
-        struct dirent* ent; // Read entries in directory 
-        
-        if ((dir = opendir(inputSource.c_str())) != NULL) {
-            while ((ent = readdir(dir)) != NULL) {
-                std::string filename = ent->d_name;
-                if (filename.length() <= 4) { continue; }
-                if (filename.compare(filename.length() - 4, 4, ".plc") != 0) { continue; }
-                try {
-                    SSCFLSO instance = Generator::load_instance(inputSource + "/" + filename, true);
-                    for (int i = 0; i < algoObjectsSize; i++) {
-                        if (algoObjects[i] != NULL) {
-                            run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
-                        }
-                    }
-                }
-                catch (std::runtime_error e) {
-                    std::cout << "Instance has wrong format" << std::endl;
-                }
-            }
-            closedir(dir);
-        }
-        else {
-            std::cout << "Could not open directory" << std::endl;
-        }
-    }
-    else {
-        try {
-            SSCFLSO instance = Generator::load_instance(inputSource, true);
-            std::string filename = inputSource;
-            int pos = 0;
-            while ((pos = filename.find("/")) != std::string::npos) {
-                filename.erase(0, pos + 1);
-            }
-            for (int i = 0; i < algoObjectsSize; i++) {
-                if (algoObjects[i] != NULL) {
-                    run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
-                }
-            }
-            
-        }
-        catch (std::runtime_error e) {
-            std::cout << "Instance has wrong format" << std::endl;
-        } 
-    }
+    
 }
 
 Algorithm* algorithmFactory(TOKEN algoToken) {
@@ -176,27 +125,14 @@ TOKEN scan_arg(const TOKEN& last_token, char* argument) {
             if (s.st_mode & S_IFDIR) {
                 return INPUT_DIRECTORY_PATH;
             }
-            else if (s.st_mode & S_IFREG) {
-                return INPUT_FILE_PATH;
-            }
-            else {
-                return INVALID;
-            }
+            return (s.st_mode & S_IFREG) ? INPUT_FILE_PATH : INVALID;
         }
         return INVALID;
     case INPUT_DIRECTORY_PATH:
     case INPUT_FILE_PATH:
         // Expect a directory
         struct stat s;
-        if (stat(argument, &s) == 0) {
-            if (s.st_mode & S_IFDIR) {
-                return OUTPUT_DIRECTORY_PATH;
-            }
-            else {
-                return INVALID;
-            }
-        }
-        return INVALID;
+        return (stat(argument, &s) == 0 && (s.st_mode & S_IFDIR)) ? OUTPUT_DIRECTORY_PATH : INVALID;
     case OUTPUT_DIRECTORY_PATH:
         // Expect Timelimit
         try {
@@ -209,13 +145,9 @@ TOKEN scan_arg(const TOKEN& last_token, char* argument) {
         return INVALID;
     case TIMELIMIT:
         // Expect Algorithm
-        std::transform(input.begin(), input.end(), input.begin(), [](unsigned char c) { return std::tolower(c); }); // To lower case
-        for (int i = 0; i < number_of_algos; i++) {
-            if (input == valid_algorithms[i]) {
-                return algo_tokens[i];
-            }
-        }
-        return INVALID;
+        std::transform(std::begin(input), std::end(input), std::begin(input), [](unsigned char c) -> char { return std::tolower(c); }); // To lower case
+        auto it = std::find_if(std::begin(valid_algorithms), std::end(valid_algorithms), [&input](const std::string& c) -> bool { return input == c; });
+        return (it != std::end(valid_algorithms)) ? algo_tokens[std::distance(std::begin(valid_algorithms), it)] : INVALID;
     case GUROBI_ALGO:
     case PREPROCESS_ALGO:
     case LOCAL_SEARCH_ALGO:
@@ -224,23 +156,15 @@ TOKEN scan_arg(const TOKEN& last_token, char* argument) {
     case RANDOMIZED_RESTART_ALGO:
         // Expect Algorithm or flag
         {
-            std::transform(input.begin(), input.end(), input.begin(), [](unsigned char c) { return std::tolower(c); }); // To lower case
-            for (int i = 0; i < number_of_algos; i++) {
-                if (input == valid_algorithms[i]) {
-                    return algo_tokens[i];
-                }
+            std::transform(std::begin(input), std::end(input), std::begin(input), [](unsigned char c) -> char { return std::tolower(c); }); // To lower case
+            auto it = std::find_if(std::begin(valid_algorithms), std::end(valid_algorithms), [&input](const std::string& c) -> bool { return input == c; });
+            if (it != std::end(valid_algorithms)) {
+                return algo_tokens[std::distance(std::begin(valid_algorithms), it)];
             }
         }
         {
-            for (int i = 0; i < number_of_flags; i++) {
-                std::string tmp1 = "-";
-                std::string tmp2 = "--";
-                tmp1 += valid_flags[i];
-                tmp2 += valid_flags[i];
-                if (tmp1 == input || tmp2 == input) {
-                    return flag_tokens[i];
-                }
-            }
+            auto it = std::find_if(std::begin(valid_flags), std::end(valid_flags), [&input](const std::string& c) -> bool { return input == "-" + c || input == "--" + c; });
+            return (it != std::end(valid_flags)) ? flag_tokens[std::distance(std::begin(valid_flags), it)] : INVALID;
         }
         return INVALID;
     case NO_TOKEN:
@@ -249,19 +173,69 @@ TOKEN scan_arg(const TOKEN& last_token, char* argument) {
     case SHOW_FORMAT_FLAG:
     case GUROBI_AFTERWARDS_FLAG:
         // Expect a flag
-        for (int i = 0; i < number_of_flags; i++) {
-            std::string tmp1 = "-";
-            std::string tmp2 = "--";
-            tmp1 += valid_flags[i];
-            tmp2 += valid_flags[i];
-            if (tmp1 == input || tmp2 == input) {
-                return flag_tokens[i];
-            }
-        }
-        return INVALID;
+        auto it = std::find_if(std::begin(valid_flags), std::end(valid_flags), [&input](const std::string& c) -> bool { return input == "-" + c || input == "--" + c; });
+        return (it != std::end(valid_flags)) ? flag_tokens[std::distance(std::begin(valid_flags), it)] : INVALID;
     case INVALID:
     default:
         return INVALID;
     }
     return INVALID;
+}
+
+void execute_run_command(
+    const bool inputSourceIsDirectory,
+    const std::string& inputSource,
+    const std::string& outputTarget,
+    const int timelimit,
+    Algorithm* const algoObjects[number_of_algos],
+    const int algoObjectsSize,
+    const bool runAlgoWithGurobi) {
+    // Check if multiple sources are available
+    if (inputSourceIsDirectory) {
+        DIR* dir; // Directory
+        struct dirent* ent; // Read entries in directory 
+
+        if ((dir = opendir(inputSource.c_str())) != NULL) {
+            while ((ent = readdir(dir)) != NULL) {
+                std::string filename = ent->d_name;
+                if (filename.length() <= 4) { continue; }
+                if (filename.compare(filename.length() - 4, 4, ".plc") != 0) { continue; }
+                try {
+                    SSCFLSO instance = Generator::load_instance(inputSource + "/" + filename, true);
+                    for (int i = 0; i < algoObjectsSize; i++) {
+                        if (algoObjects[i] != NULL) {
+                            run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
+                        }
+                    }
+                }
+                catch (std::runtime_error e) {
+                    std::cout << "Instance has wrong format" << std::endl;
+                }
+            }
+            closedir(dir);
+        }
+        else {
+            std::cout << "Could not open directory" << std::endl;
+        }
+    }
+    else {
+        // No directory, only a single file
+        try {
+            SSCFLSO instance = Generator::load_instance(inputSource, true);
+            std::string filename = inputSource;
+            int pos = 0;
+            while ((pos = filename.find("/")) != std::string::npos) {
+                filename.erase(0, pos + 1);
+            }
+            for (int i = 0; i < algoObjectsSize; i++) {
+                if (algoObjects[i] != NULL) {
+                    run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
+                }
+            }
+
+        }
+        catch (std::runtime_error e) {
+            std::cout << "Instance has wrong format" << std::endl;
+        }
+    }
 }

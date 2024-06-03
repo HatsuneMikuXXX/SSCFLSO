@@ -20,6 +20,9 @@ private:
 	// Information about the instance
 	const SSCFLSO& instance;
 	const std::string& instance_name;
+	const int timelimit;
+	const std::string algorithm_name;
+	const bool gurobi_postprocessing;
 	// Information to store
 	solution_and_value LastSolution;
 	bool LastSolutionFeasible;

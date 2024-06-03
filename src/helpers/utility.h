@@ -10,9 +10,6 @@ struct alreadyComputed {
 	T value;
 };
 
-/// Inverse index set, example: [3,0,1,4,5,2,6] becomes [1,2,5,0,3,4,6]
-std::vector<int> inverse(const std::vector<int>& index_set);
-
 void filter(facility_vector& facilities, const facility_predicate& predicate);
 
 bool are_same(double a, double b);
@@ -29,8 +26,6 @@ double magnitude(const std::vector<double>& v);
 
 std::string primitive_list_to_string(const std::vector<int>& container);
 std::string primitive_list_to_string(const std::vector<double>& container);
-
-bool is_empty(const facility_vector& a);
 
 #include "utility_impl.h"
 #endif

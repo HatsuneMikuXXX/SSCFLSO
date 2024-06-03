@@ -11,7 +11,7 @@
 class Algorithm {
 public:
 	virtual void solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) = 0;
-	virtual std::string name() = 0;
+	virtual std::string name() const = 0;
 	enum UPDATE_CODE {
 		IMPROVED = 0,
 		NOT_IMPROVED = 1,
