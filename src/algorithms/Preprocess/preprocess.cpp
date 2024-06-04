@@ -1,6 +1,10 @@
 #include "preprocess.h"
 
-void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report,const bool gurobi_afterwards) {
+std::string Preprocess::name() {
+	return "Preprocessing";
+}
+
+void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) {
 	Validator FLV = Validator(instance);
 	facility_vector solution = facility_vector(instance.facilities, 1);
 	{

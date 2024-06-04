@@ -1,3 +1,18 @@
+#include "unit_test.h"
+
+bool PreprecessUnitTest::run_tests() {
+	try {
+		std::cout << "Running test 1. Checking correctness." << std::endl;
+		test1();
+		std::cout << "OK" << std::endl;
+	}
+	catch (...) {
+		std::cerr << "Test failed." << std::endl;
+		return false;
+	}
+	return true;
+}
+
 void PreprocessUnitTest::test1() {
 	facility_vector check = facility_vector(100, 0);
 	SSCFLSO instance = Generator::load_instance("instances/unit_tests/unit_test_infeasible1.plc");
