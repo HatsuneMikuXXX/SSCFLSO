@@ -1,11 +1,10 @@
 #include "utility.h"
 
 void filter(facility_vector& facilities, const facility_predicate& predicate) {
-	for (int j = 0; j < facilities.size(); j++) {
-		if (facilities[j] == 0) { continue; }
-		else if (facilities[j] != 1) { assert(false); }
-		facilities[j] = predicate(j);
-	}
+	std::vector<int> range(facilities.size());
+	std::iota(std::begin(range), std::end(range), 0);
+	std::for_each(std::begin(range), std::end(range), 
+		[&facilities, &predicate](const int& facility_id) {facilities[facility_id] *= predicate(facility_id);});
 }
 
 bool are_same(double a, double b){

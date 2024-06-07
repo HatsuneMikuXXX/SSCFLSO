@@ -145,7 +145,7 @@ TOKEN scan_arg(const TOKEN& last_token, char* argument) {
         return INVALID;
     case TIMELIMIT:
         // Expect Algorithm
-        std::transform(std::begin(input), std::end(input), std::begin(input), [](unsigned char c) -> char { return std::tolower(c); }); // To lower case
+        std::transform(std::begin(input), std::end(input), std::begin(input), [](unsigned char& c) -> char { return std::tolower(c); }); // To lower case
         auto it = std::find_if(std::begin(valid_algorithms), std::end(valid_algorithms), [&input](const std::string& c) -> bool { return input == c; });
         return (it != std::end(valid_algorithms)) ? algo_tokens[std::distance(std::begin(valid_algorithms), it)] : INVALID;
     case GUROBI_ALGO:
@@ -156,7 +156,7 @@ TOKEN scan_arg(const TOKEN& last_token, char* argument) {
     case RANDOMIZED_RESTART_ALGO:
         // Expect Algorithm or flag
         {
-            std::transform(std::begin(input), std::end(input), std::begin(input), [](unsigned char c) -> char { return std::tolower(c); }); // To lower case
+            std::transform(std::begin(input), std::end(input), std::begin(input), [](unsigned char& c) -> char { return std::tolower(c); }); // To lower case
             auto it = std::find_if(std::begin(valid_algorithms), std::end(valid_algorithms), [&input](const std::string& c) -> bool { return input == c; });
             if (it != std::end(valid_algorithms)) {
                 return algo_tokens[std::distance(std::begin(valid_algorithms), it)];

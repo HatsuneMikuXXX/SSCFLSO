@@ -34,23 +34,21 @@ void Generator::set_preferences(const Category category){
 			});
 		
 		// Predicate to order pairs
-		const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> LEQ(
+		const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> GEQ(
 			[](const std::pair<int, double>& facility_score_a, const std::pair<int, double>& facility_score_b) -> bool {
-				return facility_score_a.second <= facility_score_b.second; 
+				return facility_score_a.second >= facility_score_b.second; 
 			});
 
 		// Generator function for preferences
-		const std::function<client_preference_vector()> generate_preferences([&facility_id, &client_id, &number_of_clients, &number_of_facilities, &generate_scores, &LEQ]() -> client_preference_vector {
+		const std::function<client_preference_vector()> generate_preferences([&facility_id, &client_id, &number_of_clients, &number_of_facilities, &generate_scores, &GEQ]() -> client_preference_vector {
 			assert(client_id < number_of_clients);
 			client_preference_vector res(number_of_facilities);
 			// Generate scores
 			std::vector<std::pair<int, double>> facility_score_pairs({});
 			facility_id = 0;
 			std::generate(std::begin(facility_score_pairs), std::end(facility_score_pairs), generate_scores);
-			// Sort in ascending order
-			std::sort(std::begin(facility_score_pairs), std::end(facility_score_pairs), LEQ);
-			// Reverse order
-			std::reverse(std::begin(facility_score_pairs), std::end(facility_score_pairs));
+			// Sort in DESC order
+			std::sort(std::begin(facility_score_pairs), std::end(facility_score_pairs), GEQ);
 			// Remove scores
 			std::transform(std::begin(facility_score_pairs), std::end(facility_score_pairs), std::begin(res), [](const std::pair<int, double>& p) -> int { return p.first; });
 			client_id++;
