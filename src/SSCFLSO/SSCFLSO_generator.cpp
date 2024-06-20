@@ -18,15 +18,15 @@ Generator::Generator(const int number_of_facilities, const int number_of_clients
 
 void Generator::set_preferences(const Category category){
 	// Takes a score function (input: client, facility) and assigns preferences using a score (return value of score function). High scores translate to high preference
-	auto assign_preferences = [this](const std::function<double(const int&, const int&)>& score_function) {
+	auto assign_preferences = [this](const std::function<double(const int, const int)>& score_function) {
 		int facility_id = 0;
 		const int number_of_facilities = this->instance.facilities;
 		int client_id = 0;
 		const int number_of_clients = this->instance.clients;
 
 		// Generator function for scores
-		const std::function<std::pair<int, double>(const int&)> generate_scores(
-			[&facility_id, &number_of_facilities, &score_function](const int& client) -> std::pair<int, double> {
+		const std::function<std::pair<int, double>(const int)> generate_scores(
+			[&facility_id, &number_of_facilities, &score_function](const int client) -> std::pair<int, double> {
 				assert(facility_id < number_of_facilities);
 				std::pair<int, double> facility_score_pair(facility_id, score_function(client, facility_id));
 				facility_id++;
@@ -44,36 +44,41 @@ void Generator::set_preferences(const Category category){
 			assert(client_id < number_of_clients);
 			client_preference_vector res(number_of_facilities);
 			// Generate scores
-			std::vector<std::pair<int, double>> facility_score_pairs({});
+			std::vector<std::pair<int, double>> facility_score_pairs(number_of_facilities);
 			facility_id = 0;
-			std::generate(std::begin(facility_score_pairs), std::end(facility_score_pairs), generate_scores);
+			asa::generate(facility_score_pairs, generate_scores);
 			// Sort in DESC order
-			std::sort(std::begin(facility_score_pairs), std::end(facility_score_pairs), GEQ);
+			asa::sort(facility_score_pairs, GEQ);
 			// Remove scores
-			std::transform(std::begin(facility_score_pairs), std::end(facility_score_pairs), std::begin(res), [](const std::pair<int, double>& p) -> int { return p.first; });
+			asa::transform(facility_score_pairs, res, [](const std::pair<int, double>& p) -> int { return p.first; });
 			client_id++;
 			return res;
 		});
 
 		// Execution
 		this->instance.preferences.clear();
-		std::generate(std::begin(this->instance.preferences), std::end(this->instance.preferences), generate_preferences);
+		this->instance.preferences.resize(this->instance.clients);
+		asa::generate(this->instance.preferences, generate_preferences);
 	};
 
-	std::function<double(const int&, const int&)> score_function;
+	std::function<double(const int, const int)> score_function;
 	switch(category){
 		case closest_assignment:
-			score_function = [this](const int& client, const int& facility) {
+			score_function = [this](const int client, const int facility) {
 				return this->instance.distribution_costs[facility][client] * -1; //Remember: High value = High preference.
 			};
 			break;
 		case perturbed_closest_assignment:
-			score_function = [this](const int& client, const int& facility) {
+			score_function = [this](const int client, const int facility) {
 				// Determine minimal and maximal distances
-				const std::function<double(const int&)> D([this, &client](const int& facility_id) -> double { return this->instance.distribution_costs[facility_id][client]; });
+				int facility_id = 0;
+				const std::function<double()> gen([this, &client, &facility_id]() -> double { 
+					double res = this->instance.distribution_costs[facility_id][client];
+					facility_id++;
+					return res;
+					});
 				std::vector<double> client_distances(this->instance.facilities);
-				std::iota(std::begin(client_distances), std::end(client_distances), 0); // Fill with 0,1,2,...
-				std::transform(std::begin(client_distances), std::end(client_distances), std::begin(client_distances), D);
+				asa::generate(client_distances, gen);
 				double min_dist = *std::min_element(std::begin(client_distances), std::end(client_distances));
 				double max_dist = *std::max_element(std::begin(client_distances), std::end(client_distances));
 				double true_cost = this->instance.distribution_costs[facility][client];
@@ -81,7 +86,7 @@ void Generator::set_preferences(const Category category){
 			};
 			break;
 		case farthest_assignment:
-			score_function = [this](const int& client, const int& facility) {
+			score_function = [this](const int client, const int facility) {
 				return this->instance.distribution_costs[facility][client];
 			};
 			break;

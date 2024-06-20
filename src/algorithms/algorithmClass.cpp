@@ -1,6 +1,6 @@
 #include "algorithmClass.h"
 
-Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& new_solution, Timer& timer, ReportResult& report, bool searchingForFeasibleSolution = false) {
+Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& new_solution, Timer& timer, ReportResult& report) {
 	if (!timer.running_status()) {
 		return Algorithm::TIMER_NOT_RUNNING;
 	}
@@ -11,16 +11,7 @@ Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solu
 	Validator FLV(instance);
 	FLV.set_solution(new_solution);
 	solution_and_value forTheReport = { new_solution, FLV.value() };
-	if (searchingForFeasibleSolution) {
-		// Use Rating
-		if (FLV.evaluate_inf_solution() < current_best.val || current_best.val == 1) {
-			report.evalResult(forTheReport, timer);
-			timer.proceed_with_timer();
-			current_best.sol = new_solution;
-			return Algorithm::IMPROVED;
-		}
-	}
-	else if (FLV.value() < current_best.val || current_best.val == -1) {
+	if (FLV.value() < current_best.val || current_best.val == -1) {
 		// Use Value
 		report.evalResult(forTheReport, timer);
 		timer.proceed_with_timer();
@@ -73,7 +64,7 @@ protected:
 	}
 };
 
-void Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& initial, Timer& timer, ReportResult& report) {
+void Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& initial, Timer& timer, ReportResult& report) const {
 	int m = instance.facilities;
 	int n = instance.clients;
 	try {

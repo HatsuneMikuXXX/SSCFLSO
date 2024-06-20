@@ -1,5 +1,11 @@
 #include "utility.h"
 
+std::vector<int> range(int n) {
+	std::vector<int> r(n);
+	std::iota(std::begin(r), std::end(r), 0);
+	return r;
+}
+
 void filter(facility_vector& facilities, const facility_predicate& predicate) {
 	std::vector<int> range(facilities.size());
 	std::iota(std::begin(range), std::end(range), 0);

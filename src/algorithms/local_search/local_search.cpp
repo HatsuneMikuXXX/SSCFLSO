@@ -1,6 +1,115 @@
 #include "local_search.h"
 
-void LocalSearch::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) {
+
+LocalSearch::LocalSearch(INITIAL_SOLUTION init, NEXT_NEIGHBOR next) : init(init), next(next) {}
+
+std::string LocalSearch::name() const {
+	std::string id = "Local Search: ";
+	switch (init) {
+	case PREPROCESS:
+		id += "Preprocess";
+		break;
+	case RANDOM_RESTART:
+		id += "Random Restart";
+		break;
+	case RANDOM:
+		id += "Random";
+		break;
+	default:
+		throw std::runtime_error("Initial solution code is non-existent!");
+		break;
+	}
+	id += " + ";
+	switch (next) {
+	case BEST:
+		id += "Best";
+		break;
+	case FIRST:
+		id += "First";
+		break;
+	default:
+		throw std::runtime_error("Next neighbor solution code is non-existent!");
+		break;
+	}
+	return id;
+}
+
+facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report) {
+	facility_vector initial_solution(instance.facilities, 0);
+
+	switch (this->init) {
+	case PREPROCESS:
+		{
+			Preprocess p = Preprocess();
+			solution_and_value SV = { facility_vector(instance.facilities, 0), -1 };
+			p.solve(instance, SV, timer, report, false);
+			initial_solution = SV.sol;
+		}
+		break;
+	case RANDOM_RESTART:
+		{
+			Preprocess p = Preprocess();
+			solution_and_value SV = { facility_vector(instance.facilities, 0), -1 };
+			p.solve(instance, SV, timer, report, false);
+			do {
+				initial_solution.clear();
+				initial_solution.resize(instance.facilities);
+				int facility_id = 0;
+				asa::generate(initial_solution, [&facility_id, &SV]() -> int { return (SV.sol[facility_id++] == 0) ? 0 : flip(); });
+				FLV.set_solution(initial_solution);
+			} while (!FLV.feasible() && timer.in_time());
+		}
+		break;
+	case RANDOM:
+		{
+			Preprocess p = Preprocess();
+			solution_and_value SV = { facility_vector(instance.facilities, 0), -1 };
+			p.solve(instance, SV, timer, report, false);
+
+			bool stuck_in_local_optima = false;
+			double rating = 0;
+			facility_vector best_neighbor(instance.facilities);
+
+			do {
+				// Initial
+				int facility_id = 0;
+				asa::generate(initial_solution, [&facility_id, &SV]() -> int { return (SV.sol[facility_id++] == 0) ? 0 : flip(); });
+				FLV.set_solution(initial_solution);
+				rating = FLV.evaluate_inf_solution();
+				// Search
+				while (!FLV.feasible() && !stuck_in_local_optima && timer.in_time()) {
+					stuck_in_local_optima = true;
+					// Add-Remove-Neighborhood
+
+					// Swap-Neighborhood // Quadratic amount many
+
+					initial_solution = best_neighbor;
+				}
+			} while (!FLV.feasible() && timer.in_time());
+		}
+		break;
+	default:
+		break;
+	}
+	return initial_solution;
+}
+
+void LocalSearch::get_next_neighbor(Validator& FLV, facility_vector& solution, NEXT_NEIGHBOR nn_code) {
+	assert(solution.size() > 0);
+	//ASR
+	std::vector<int> facility_range = range(solution.size());
+	FLV.set_solution
+	switch (nn_code) {
+	case FIRST:
+
+		break;
+	case BEST:
+		break;
+	}
+}
+
+
+void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
 	auto start = start_timer();
 	Validator FLV = Validator(instance);
 	facility_vector no_unnecessary_facilities = preprocess(instance);
@@ -47,8 +156,4 @@ void LocalSearch::solve(const SSCFLSO& instance, facility_vector& current_best, 
 		}
 	}
 	return;
-}
-
-std::string LocalSearch::meta_information() {
-	return local_search_info;
 }

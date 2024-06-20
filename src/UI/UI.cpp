@@ -145,7 +145,7 @@ TOKEN scan_arg(const TOKEN& last_token, char* argument) {
         return INVALID;
     case TIMELIMIT:
         // Expect Algorithm
-        std::transform(std::begin(input), std::end(input), std::begin(input), [](unsigned char& c) -> char { return std::tolower(c); }); // To lower case
+        asa::transform(input, [](unsigned char c) -> char { return std::tolower(c); }); // To lower case
         auto it = std::find_if(std::begin(valid_algorithms), std::end(valid_algorithms), [&input](const std::string& c) -> bool { return input == c; });
         return (it != std::end(valid_algorithms)) ? algo_tokens[std::distance(std::begin(valid_algorithms), it)] : INVALID;
     case GUROBI_ALGO:
@@ -156,7 +156,7 @@ TOKEN scan_arg(const TOKEN& last_token, char* argument) {
     case RANDOMIZED_RESTART_ALGO:
         // Expect Algorithm or flag
         {
-            std::transform(std::begin(input), std::end(input), std::begin(input), [](unsigned char& c) -> char { return std::tolower(c); }); // To lower case
+            asa::transform(input, [](unsigned char c) -> char { return std::tolower(c); }); // To lower case
             auto it = std::find_if(std::begin(valid_algorithms), std::end(valid_algorithms), [&input](const std::string& c) -> bool { return input == c; });
             if (it != std::end(valid_algorithms)) {
                 return algo_tokens[std::distance(std::begin(valid_algorithms), it)];
@@ -197,11 +197,11 @@ void execute_run_command(
 
         if ((dir = opendir(inputSource.c_str())) != NULL) {
             while ((ent = readdir(dir)) != NULL) {
-                std::string filename = ent->d_name;
+                const std::string filename = ent->d_name;
                 if (filename.length() <= 4) { continue; }
                 if (filename.compare(filename.length() - 4, 4, ".plc") != 0) { continue; }
                 try {
-                    SSCFLSO instance = Generator::load_instance(inputSource + "/" + filename, true);
+                    const SSCFLSO instance = Generator::load_instance(inputSource + "/" + filename, true);
                     for (int i = 0; i < algoObjectsSize; i++) {
                         if (algoObjects[i] != NULL) {
                             run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
@@ -221,12 +221,13 @@ void execute_run_command(
     else {
         // No directory, only a single file
         try {
-            SSCFLSO instance = Generator::load_instance(inputSource, true);
+            const SSCFLSO instance = Generator::load_instance(inputSource, true);
             std::string filename = inputSource;
             int pos = 0;
             while ((pos = filename.find("/")) != std::string::npos) {
                 filename.erase(0, pos + 1);
             }
+            const std::string filename = filename;
             for (int i = 0; i < algoObjectsSize; i++) {
                 if (algoObjects[i] != NULL) {
                     run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);

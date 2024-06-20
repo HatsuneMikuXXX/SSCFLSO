@@ -1,16 +1,16 @@
 #include "preprocess.h"
 
-std::string Preprocess::name() {
+std::string Preprocess::name() const {
 	return "Preprocessing";
 }
 
-void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) {
+void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
 	facility_vector solution = facility_vector(instance.facilities, 1);
 	{
 		// Remove facilities with a too small capacity
 		const double minimum_demand = *min_element(std::begin(instance.demands), std::end(instance.demands));
-		facility_predicate facilities_to_keep = [&instance, &minimum_demand](const int& facility) 
-			-> bool { return instance.capacities[facility] >= minimum_demand; };
+		facility_predicate facilities_to_keep = [&instance, &minimum_demand](const int facility_id) 
+			-> bool { return instance.capacities[facility_id] >= minimum_demand; };
 		filter(solution, facilities_to_keep);
 	}
 	{
@@ -19,10 +19,10 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 		FLV.set_solution(solution);
 		{
 			facility_vector exceeds_capacity;
-			while (!FLV.feasible() && std::any_of(std::begin(solution), std::end(solution), [](const int& facility) -> bool {return facility == 1; })) {
+			while (!FLV.feasible() && std::any_of(std::begin(solution), std::end(solution), [](const int facility) -> bool {return facility == 1; })) {
 				// Subtract facilities that exceed capacity
 				exceeds_capacity = FLV.exceeds_capacity();
-				std::transform(solution.begin(), solution.end(), exceeds_capacity.begin(), solution.begin(), std::minus<int>());
+				asa::transform(solution, exceeds_capacity, solution, std::minus<int>());
 				FLV.set_solution(solution);
 			}
 		}
@@ -30,25 +30,23 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 	{
 		// Remove unnecessary facilities (too unpopular-issue)
 		// First, compute some helpful information/data structures
-		const double total_demand = sum(instance.demands);
-		std::vector<int> range(instance.facilities);
-		std::iota(std::begin(range), std::end(range), 0);
-		const std::vector<int> range = range;
+		const double total_demand = asa::sum(instance.demands, 0);
+		const std::vector<int> facility_range = range(instance.facilities);
 
 		// Define heuristic
-		const std::function<int(const facility_vector&)> LB_facilities_required_heuristic = [&instance, &total_demand, &range](const facility_vector& solution) {
+		const std::function<int(const facility_vector&)> LB_facilities_required_heuristic = [&instance, &total_demand, &facility_range](const facility_vector& solution) {
 			// Sort capacities
 			capacity_vector capacities = {};
-			std::for_each(std::begin(range), std::end(range), 
-				[&instance, &solution, &capacities](const int& facility_id) { if (solution[facility_id] == 1) {
+			asa::for_each(facility_range, 
+				[&instance, &solution, &capacities](const int facility_id) { if (solution[facility_id] == 1) {
 				capacities.push_back(instance.capacities[facility_id]);
 			}}); // Consider only capacities of open facilities
-			std::sort(std::begin(capacities), std::end(capacities), [](const double& a, const double& b) -> bool {return a > b; }); // Sort DESC
+			asa::sort(capacities, [](const double a, const double b) -> bool {return a > b; }); // Sort DESC
 			
 			// Compute minimum number of facilities required
 			int min = 0;
 			double minCapacity = 0;
-			std::for_each(std::begin(capacities), std::end(capacities), [&min, &minCapacity, &total_demand](const double& c) {
+			asa::for_each(capacities, [&min, &minCapacity, &total_demand](const double c) {
 				if (minCapacity < total_demand) {
 					min++;
 					minCapacity += c;
@@ -61,13 +59,12 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 		std::vector<std::map<int, int>> rankings;
 		const std::function<void()> assign_ranks([&instance, &solution, &rankings]() {
 			rankings.clear();
-			std::vector<int> range(instance.clients);
-			std::iota(std::begin(range), std::end(range), 0);
-			std::for_each(std::begin(range), std::end(range), [&instance, &solution, &rankings](const int& client_id) {
+			const std::vector<int> client_range = range(instance.clients);
+			asa::for_each(client_range, [&instance, &solution, &rankings](const int client_id) {
 				std::map<int, int> ranking = {};
 				int rank = 0;
 				const client_preference_vector& p = instance.preferences[client_id];
-				std::for_each(std::begin(p), std::end(p), [&rank, &ranking, &solution](const int& facility_id) {
+				asa::for_each(p, [&rank, &ranking, &solution](const int facility_id) {
 					if (solution[facility_id] == 1) {
 						ranking.insert({ facility_id, rank });
 						rank++;
@@ -86,12 +83,12 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 			
 			// Compute unnecessary facilities - start by assuming that all facilities are unnecessary
 			facility_vector unnecessary_facility_candidates = solution;
-			int number_unnecessary_facilities = std::accumulate(std::begin(unnecessary_facility_candidates), std::end(unnecessary_facility_candidates), 0);
+			int number_unnecessary_facilities = asa::sum(unnecessary_facility_candidates, 0);
 			int counter = 0;
 			while (counter < instance.clients && number_unnecessary_facilities > 0) {
 				int client = counter;
-				std::for_each(std::begin(range), std::end(range), 
-					[&instance, &min, &unnecessary_facility_candidates,	&number_unnecessary_facilities,	&rankings, &client](const int& facility_id) {
+				asa::for_each(facility_range,
+					[&instance, &min, &unnecessary_facility_candidates,	&number_unnecessary_facilities,	&rankings, &client](const int facility_id) {
 						if (unnecessary_facility_candidates[facility_id] == 1 && rankings[client][facility_id] <= instance.facilities - min) {
 							unnecessary_facility_candidates[facility_id] = 0;
 							number_unnecessary_facilities--;
@@ -105,8 +102,8 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 			}			
 			
 			// Update
-			std::for_each(std::begin(range), std::end(range), [&solution, &unnecessary_facility_candidates](const int& facility_id) {
-				solution[facility_id] *= (1 - unnecessary_facility_candidates[facility_id]);
+			asa::for_each(facility_range, [&solution, &unnecessary_facility_candidates](const int facility_id) {
+				solution[facility_id] = solution[facility_id] && (1 - unnecessary_facility_candidates[facility_id]);
 			});
 		}
 	}

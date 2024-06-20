@@ -18,7 +18,7 @@ void ReportResult::evalResult(const solution_and_value& current_best, Timer& tim
 	this->LastSolution = current_best;
 	this->time_stamps.push_back(timer.get_elapsed_time());
 	this->value_stamps.push_back(this->LastSolution.val);
-	this->number_of_facilities_stamps.push_back(sum(this->LastSolution.sol));
+	this->number_of_facilities_stamps.push_back(asa::sum(this->LastSolution.sol, 0));
 }
 
 void ReportResult::finishUp(const std::string& save_to_path) {

@@ -1,7 +1,7 @@
 #ifndef TYPE_DEFINITIONS_H
 #define TYPE_DEFINITIONS_H
 #include "common.h"
-typedef std::vector<int> facility_vector;
+typedef std::vector<bool> facility_vector;
 typedef std::vector<int> client_vector;
 typedef std::vector<double> demand_vector;
 typedef std::vector<double> capacity_vector;
