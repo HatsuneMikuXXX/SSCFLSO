@@ -10,6 +10,17 @@ struct alreadyComputed {
 	T value;
 };
 
+class SolutionContainer {
+public:
+	SolutionContainer(const facility_vector& root);
+	void add(const facility_vector& next);
+	bool contains(const facility_vector& val) const ;
+private:
+	const facility_vector root;
+	facility_vector tail;
+	std::vector<int> change_log{ std::vector<int>(0) };
+};
+
 // Abbreviated Standard Algorithms - only commonly used ones
 // How are they abbreviated? Instead of passing container.begin() and container.end() we pass only a reference to the container.
 namespace asa {
@@ -61,6 +72,8 @@ namespace asa {
 
 std::vector<int> range(int n);
 void filter(facility_vector& facilities, const facility_predicate& predicate);
+
+void inverse(std::vector<int>& output, const std::vector<int>& input);
 
 bool are_same(double a, double b);
 bool are_same(const std::vector<double>& a, const std::vector<double>& b);

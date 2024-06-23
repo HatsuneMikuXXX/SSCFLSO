@@ -34,7 +34,41 @@ std::string LocalSearch::name() const {
 	return id;
 }
 
-facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report) {
+void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
+	Validator FLV(instance);
+	facility_vector solution = produce_initial_solution(instance, FLV, timer, report);	
+	if (this->init != PREPROCESS) {
+		improve_solution(instance, current_best, solution, timer, report);
+	}
+
+	if (this->init == PREPROCESS) {
+		// Search until stuck
+		while (get_next_neighbor(FLV, solution) && timer.in_time()) {
+			improve_solution(instance, current_best, solution, timer, report);
+		}
+	}
+	else {
+		// Search and repeat
+		std::vector<SolutionContainer> SC_collection = {SolutionContainer(solution)};
+		int sc_index = 0;
+
+		while (timer.in_time()) {
+			while (get_next_neighbor(FLV, solution)) {
+				improve_solution(instance, current_best, solution, timer, report);
+				SC_collection[sc_index].add(solution);
+			}
+			do {
+				solution = produce_initial_solution(instance, FLV, timer, report);
+			} while (asa::any_of(SC_collection, [&solution](const SolutionContainer& sc) -> bool { return sc.contains(solution); }));
+
+			SC_collection.push_back(SolutionContainer(solution));
+			sc_index++;
+		}
+	}
+	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
+}
+
+facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report) const {
 	facility_vector initial_solution(instance.facilities, 0);
 
 	switch (this->init) {
@@ -62,28 +96,51 @@ facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, V
 		break;
 	case RANDOM:
 		{
+			// Preparation
 			Preprocess p = Preprocess();
 			solution_and_value SV = { facility_vector(instance.facilities, 0), -1 };
 			p.solve(instance, SV, timer, report, false);
 
+			std::vector<SolutionContainer> SC_collection(0);
+			int sc_index = -1;
+
 			bool stuck_in_local_optima = false;
 			double rating = 0;
 			facility_vector best_neighbor(instance.facilities);
+			facility_vector tmp_neighbor(instance.facilities);
+			range_vector facility_range = range(instance.facilities);
 
 			do {
 				// Initial
+				initial_solution.clear();
+				initial_solution.resize(instance.facilities);
 				int facility_id = 0;
 				asa::generate(initial_solution, [&facility_id, &SV]() -> int { return (SV.sol[facility_id++] == 0) ? 0 : flip(); });
+				
+				// If solution was already seen, do it over
+				bool solution_already_checked = asa::any_of(SC_collection, [&initial_solution](const SolutionContainer& sc) -> bool { return sc.contains(initial_solution); });
+				if (solution_already_checked) { continue; }
+				SC_collection.push_back(SolutionContainer(initial_solution));
+				sc_index++;
+
+				// Search
 				FLV.set_solution(initial_solution);
 				rating = FLV.evaluate_inf_solution();
-				// Search
 				while (!FLV.feasible() && !stuck_in_local_optima && timer.in_time()) {
 					stuck_in_local_optima = true;
 					// Add-Remove-Neighborhood
-
-					// Swap-Neighborhood // Quadratic amount many
-
+					asa::for_each(facility_range, [&initial_solution, &rating, &best_neighbor, &tmp_neighbor, &FLV, &stuck_in_local_optima](const int facility_id) {
+						tmp_neighbor = initial_solution;
+						tmp_neighbor[facility_id] = 1 - tmp_neighbor[facility_id];
+						FLV.set_solution(tmp_neighbor);
+						if (FLV.evaluate_inf_solution() < rating) {
+							best_neighbor = tmp_neighbor;
+							rating = FLV.evaluate_inf_solution();
+							stuck_in_local_optima = false;
+						}
+					});
 					initial_solution = best_neighbor;
+					SC_collection[sc_index].add(initial_solution);
 				}
 			} while (!FLV.feasible() && timer.in_time());
 		}
@@ -94,66 +151,83 @@ facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, V
 	return initial_solution;
 }
 
-void LocalSearch::get_next_neighbor(Validator& FLV, facility_vector& solution, NEXT_NEIGHBOR nn_code) {
+bool LocalSearch::get_next_neighbor(Validator& FLV, facility_vector& solution) const {
 	assert(solution.size() > 0);
+	FLV.set_solution(solution);
+	double solution_value = FLV.value();
+	range_vector facility_range = range(solution.size());
+	facility_vector best_neighbor = solution;
 	//ASR
-	std::vector<int> facility_range = range(solution.size());
-	FLV.set_solution
-	switch (nn_code) {
-	case FIRST:
-
-		break;
-	case BEST:
-		break;
-	}
-}
-
-
-void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
-	auto start = start_timer();
-	Validator FLV = Validator(instance);
-	facility_vector no_unnecessary_facilities = preprocess(instance);
-	facility_vector solution = no_unnecessary_facilities;
-	std::vector<facility_vector> neighborhood;
-	std::vector<facility_vector> tmp; // Collect subneighborhoods and add them to neighborhood
-	bool stuck_in_local_optima = false;
-	while (!stuck_in_local_optima) {
-		stuck_in_local_optima = true;
-		// Collect neighborhoods
-		neighborhood = {};
-		tmp = swap_neighborhood(solution, no_unnecessary_facilities);
-		neighborhood.insert(neighborhood.begin(), tmp.begin(), tmp.end());
-		tmp = remove_neighborhood(solution);
-		neighborhood.insert(neighborhood.begin(), tmp.begin(), tmp.end());
-		// Conduct search
-		FLV.set_solution(solution);
-		double current_value = FLV.value();
-		for (auto neighbor = neighborhood.begin(); neighbor != neighborhood.end(); neighbor++) {
-			FLV.set_solution(*neighbor);
-			if (FLV.feasible() && FLV.value() < current_value) {
-				solution = *neighbor;
-				current_value = FLV.value();
-				stuck_in_local_optima = false;
+	{
+		//Add-Neighborhood
+		facility_vector tmp = solution;
+		auto it = std::begin(facility_range);
+		while (it != std::end(facility_range)) {
+			if (solution[*it]) { it++; continue; }
+			tmp[*it] = 1;
+			FLV.set_solution(tmp);
+			if (FLV.feasible() && FLV.value() < solution_value) {
+				switch (this->next) {
+				case FIRST:
+					solution = tmp;
+					return true;
+				case BEST:
+					best_neighbor = tmp;
+					solution_value = FLV.value();
+					break;
+				}
 			}
+			tmp[*it] = 0;
+			it++;
 		}
-		if (!within_time_limit(start, time_limit)) {
-			return;
+		// Swap-Neighborhood
+		auto it1 = std::begin(facility_range);
+		while (it1 != std::end(facility_range)) {
+			if (solution[*it1]) { it1++; continue; }
+			tmp[*it1] = 1;
+			auto it2 = std::begin(facility_range);
+			while (it2 != std::end(facility_range)) {
+				if (!solution[*it2]) { it2++; continue; }
+				tmp[*it2] = 0;
+				FLV.set_solution(tmp);
+				if (FLV.feasible() && FLV.value() < solution_value) {
+					switch (this->next) {
+					case FIRST:
+						solution = tmp;
+						return true;
+					case BEST:
+						best_neighbor = tmp;
+						solution_value = FLV.value();
+						break;
+					}
+				}
+				tmp[*it2] = 1;
+				it2++;
+			}
+			tmp[*it1] = 0;
+			it1++;
 		}
-		else {
-			current_best = solution;
-		}
-	}
-	if (gurobi_afterwards) {
-		auto remaining = time_limit - get_elapsed_time_ms(start);
-		if (remaining.count() < GUROBI_TIME_BUFFER) {
-			return;
-		}
-		solution = solve_with_gurobi(instance, remaining, current_best);
 
-		if (within_time_limit(start, time_limit)) {
-			std::cout << "Gurobi Afterwards Successful" << std::endl;
-			current_best = solution;
+		// Remove-Neighborhood
+		auto it = std::begin(facility_range);
+		while (it != std::end(facility_range)) {
+			if (!solution[*it]) { it++; continue; }
+			tmp[*it] = 0;
+			FLV.set_solution(tmp);
+			if (FLV.feasible() && FLV.value() < solution_value) {
+				switch (this->next) {
+				case FIRST:
+					solution = tmp;
+					return true;
+				case BEST:
+					best_neighbor = tmp;
+					solution_value = FLV.value();
+					break;
+				}
+			}
+			tmp[*it] = 1;
+			it++;
 		}
 	}
-	return;
+	return (solution == best_neighbor) ? false : (solution = best_neighbor) == solution; //Last expression is equivalent to true
 }

@@ -22,4 +22,6 @@ typedef struct solution_and_value {
 	facility_vector sol;
 	double val;
 };
+
+typedef std::vector<int> range_vector;
 #endif 

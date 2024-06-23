@@ -24,19 +24,20 @@ Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solu
 
 class myCallback : public GRBCallback {
 public:
-	Validator FLV;
-	Timer* timer;
-	ReportResult* report;
 	GRBVar* open;
+	Validator* FLV;
 	int numFacilities;
 	solution_and_value* current_best;
-	myCallback(GRBVar* open, const SSCFLSO& instance, solution_and_value& current_best,Timer& timer, ReportResult& report) {
+	Timer* timer;
+	ReportResult* report;
+	myCallback(GRBVar* open, Validator& FLV, const int numFacilities, solution_and_value& current_best, Timer& timer, ReportResult& report) {
 		this->open = open;
-		this->FLV = Validator(instance);
-		this->numFacilities = instance.facilities;
+		this->FLV = &FLV;
+		this->numFacilities = numFacilities;
+		this->current_best = &current_best;
 		this->timer = &timer;
 		this->report = &report;
-		this->current_best = &current_best;
+		
 	}
 protected:
 	void callback() {
@@ -47,13 +48,13 @@ protected:
 				for (int j = 0; j < this->numFacilities; j++) {
 					solution[j] = open[j].get(GRB_DoubleAttr_X);
 				}
-				this->FLV.set_solution(solution);
-				if (this->FLV->feasible() && this->FLV.value() < this->current_best->val && timer->in_time()) {
+				this->FLV->set_solution(solution);
+				if (this->FLV->feasible() && this->FLV->value() < this->current_best->val && timer->in_time()) {
 					this->current_best->sol = solution;
-					this->current_best->val = FLV.value();
+					this->current_best->val = FLV->value();
 					this->report->evalResult(*this->current_best, *this->timer);
 				}
-				std::cout << "Solution value: " << this->FLV.value() << std::endl;
+				std::cout << "Solution value: " << this->FLV->value() << std::endl;
 			}
 		}
 		catch (GRBException e) {
@@ -65,8 +66,10 @@ protected:
 };
 
 void Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& initial, Timer& timer, ReportResult& report) const {
-	int m = instance.facilities;
-	int n = instance.clients;
+	const range_vector facility_range = range(instance.facilities);
+	const range_vector client_range = range(instance.clients);
+	const int m = facility_range.size();
+	const int n = client_range.size();
 	try {
 		// Define the model
 		GRBEnv* env = new GRBEnv();
@@ -74,65 +77,64 @@ void Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_a
 		GRBModel model = GRBModel(*env);
 		// Facility variables
 		GRBVar* open = model.addVars(m, GRB_BINARY);
-		for (int j = 0; j < m; j++) {
-			open[j].set(GRB_DoubleAttr_Obj, instance.facility_costs[j]);
-		}
+		asa::for_each(facility_range, [&open, &instance](const int facility_id) {
+			open[facility_id].set(GRB_DoubleAttr_Obj, instance.facility_costs[facility_id]);
+			});
 		// Distribution variables
 		GRBVar** distribution = new GRBVar * [instance.facilities];
-		for (int j = 0; j < m; j++) {
-			distribution[j] = model.addVars(n, GRB_BINARY);
-			for (int i = 0; i < n; i++) {
-				distribution[j][i].set(GRB_DoubleAttr_Obj, instance.distribution_costs[j][i]);
-			}
-		}
+		asa::for_each(facility_range, [&distribution, &model, &n, &client_range, &instance](const int facility_id) {
+			distribution[facility_id] = model.addVars(n, GRB_BINARY);
+			asa::for_each(client_range, [&distribution, &instance, &facility_id](const int client_id) {
+				distribution[facility_id][client_id].set(GRB_DoubleAttr_Obj, instance.distribution_costs[facility_id][client_id]);
+			});
+		});
 		// Objective
 		model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
 
 		// Constraints
 		{
 			// Constraint demand
-			for (int i = 0; i < n; i++) {
+			asa::for_each(client_range, [&facility_range, &distribution, &model](const int client_id) {
 				GRBLinExpr totdemand = 0;
-				for (int j = 0; j < m; j++) {
-					totdemand += distribution[j][i];
-				}
+				asa::for_each(facility_range, [&totdemand, &distribution, &client_id](const int facility_id) {
+					totdemand += distribution[facility_id][client_id];
+				});
 				model.addConstr(totdemand == 1);
-			}
+			});
 			// Constraint capacity
-			for (int j = 0; j < m; j++) {
+			asa::for_each(facility_range, [&instance, &distribution, &model, &open, &client_range](const int facility_id) {
 				GRBLinExpr totdemand = 0;
-				for (int i = 0; i < n; i++) {
-					totdemand += instance.demands[i] * distribution[j][i];
-				}
-				model.addConstr(totdemand <= instance.capacities[j] * open[j]);
-			}
+				asa::for_each(client_range, [&totdemand, &instance, &distribution, &facility_id](const int client_id) {
+					totdemand += instance.demands[client_id] * distribution[facility_id][client_id];
+				});
+				model.addConstr(totdemand <= instance.capacities[facility_id] * open[facility_id]);
+			});
 			// Constraint preference
-			std::vector<std::vector<int>> rankings = std::vector<std::vector<int>>(n);
-			for (int i = 0; i < n; i++) {
-				rankings[i] = inverse(instance.preferences[i]);
-				for (int j = 0; j < m; j++) {
-					GRBLinExpr preference = open[j];
-					for (int k = 0; k < m; k++) {
-						if (rankings[i][k] > rankings[i][j]) {
-							preference += distribution[k][i];
+			asa::for_each(client_range, [&model, &facility_range, &open, &distribution, &instance](const int client_id) {
+				std::vector<int> rankings_of_client(0); // Low Rank-Value = High Preference
+				inverse(rankings_of_client, instance.preferences[client_id]);
+				asa::for_each(facility_range, [&model, &client_id, &open, &facility_range, &distribution, &rankings_of_client](const int facility_id) {
+					GRBLinExpr preference = open[facility_id];
+					asa::for_each(facility_range, [&client_id, &facility_id, &preference, &distribution, &rankings_of_client](const int worse_facility_id) {
+						if (rankings_of_client[worse_facility_id] > rankings_of_client[facility_id]) {
+							preference += distribution[worse_facility_id][client_id];
 						}
-					}
+					});
 					model.addConstr(preference <= 1);
-				}
-			}
+				});
+			});
 		}
 		// Initial solution
-		for (int j = 0; j < m; j++) {
-			open[j].set(GRB_DoubleAttr_Start, initial[j]);
-		}
+		asa::for_each(facility_range, [&open, &initial](const int facility_id) {open[facility_id].set(GRB_DoubleAttr_Start, initial[facility_id]); });
+
 		// Callback - Required for frequent updates
-		myCallback cb = myCallback(open, instance, current_best, timer, report);
+		Validator FLV = Validator(instance);
+		myCallback cb = myCallback(open, FLV, instance.facilities, current_best, timer, report);
 		model.setCallback(&cb);
 		// Start solving
 		double remaining_time_limit_in_sec = timer.get_remaining_time() / 1000;
 		model.set(GRB_DoubleParam_TimeLimit, remaining_time_limit_in_sec);
 		model.optimize();
-		report.finishUp();
 		return;
 	}
 	catch (std::exception e) {

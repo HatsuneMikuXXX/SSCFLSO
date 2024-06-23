@@ -21,7 +21,7 @@ public:
 private:
 	const INITIAL_SOLUTION init;
 	const NEXT_NEIGHBOR next;
-	facility_vector produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report);
-	void get_next_neighbor(Validator& FLV, facility_vector& solution, NEXT_NEIGHBOR nn_code);
+	facility_vector produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report) const;
+	bool get_next_neighbor(Validator& FLV, facility_vector& solution) const;
 };
 #endif
