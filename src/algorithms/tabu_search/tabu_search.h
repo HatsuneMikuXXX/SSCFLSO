@@ -1,12 +1,21 @@
-#ifndef ROUNDING_H
-#define ROUNDING_H
+#ifndef TABU_SEARCH_H
+#define TABU_SEARCH_H
 #include "../algorithmClass.h"
-#include "../../SSCFLSO/SSCFLSO_generator.h"
+#include "../local_search/local_search.h"
 #include "../Preprocess/preprocess.h"
-class Rounding : public Algorithm {
+
+class TabuSearch : public Algorithm {
 public:
+	enum INITIAL_SOLUTION {
+		PREPROCESS,
+		RANDOM,
+		GIVEN,
+	};
+	TabuSearch(INITIAL_SOLUTION init);
 	void solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const;
 	std::string name() const;
 	bool post_applyable() const;
+private:
+	const INITIAL_SOLUTION init{PREPROCESS};
 };
 #endif

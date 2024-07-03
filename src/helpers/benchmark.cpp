@@ -5,6 +5,7 @@ void run(const SSCFLSO& instance, const std::string& instance_name, const std::s
 	Validator FLV(instance);
 	Timer timer(timelimit_in_milliseconds);
 	ReportResult report(instance, instance_name, timelimit_in_milliseconds, algo->name(), gurobi_afterwards);
+	timer.start_timer();
 	algo->solve(instance, SV, timer, report, gurobi_afterwards);
 	report.finishUp(save_to_path);
 }

@@ -17,7 +17,7 @@ void SolutionContainer::add(const facility_vector& next) {
 		}
 	});
 	if (!no_change) {
-		change_log[change_log.size() - 1] *= -1;
+		change_log.back() *= -1;
 	}
 }
 
@@ -72,6 +72,10 @@ void inverse(std::vector<int>& output, const std::vector<int>& input) {
 	});
 }
 
+bool no_facility_is_open(const facility_vector& solution) {
+	return !asa::any_of(solution, [](const bool is_open) -> bool { return is_open; });
+}
+
 bool are_same(double a, double b){
 	return fabs(a - b) < EPSILON;
 }
@@ -114,30 +118,30 @@ bool are_same(const std::vector<std::vector<double>>& a, const std::vector<std::
 	return true;
 }
 
-int sum(const std::vector<int>& a) {
-	return std::accumulate(a.begin(), a.end(), 0);
-}
-
-double sum(const std::vector<double>& a) {
-	return std::accumulate(a.begin(), a.end(), 0);
-}
-
 int hamming_distance(facility_vector& a, facility_vector& b) {
 	assert(a.size() == b.size());
 	facility_vector c = facility_vector(a.size(), 0);
-	std::transform(a.begin(), a.end(), b.begin(), c.begin(), std::bit_xor<int>());
-	return std::accumulate(c.begin(), c.end(), 0);
+	asa::transform(a, b, c, std::bit_xor<int>());
+	return asa::sum(c, 0);
 }
 
 double magnitude(const std::vector<double>& v) {
 	double res = 0;
-	std::for_each(std::begin(v), std::end(v), [&res](const double& val) {res += val * val; });
+	asa::for_each(v, [&res](const double& val) {res += val * val; });
 	return sqrt(res);
+}
+
+std::string primitive_list_to_string(const std::vector<bool>& container) {
+	std::string msg = "[";
+	asa::for_each(container, [&msg](const bool value) { msg += std::to_string(int(value)) + ","; });
+	msg.pop_back();
+	msg += "]";
+	return msg;
 }
 
 std::string primitive_list_to_string(const std::vector<int>& container) {
 	std::string msg = "[";
-	std::for_each(std::begin(container), std::end(container), [&msg](const double& value) { msg += std::to_string(value) + ","; });
+	asa::for_each(container, [&msg](const int value) { msg += std::to_string(value) + ","; });
 	msg.pop_back();
 	msg += "]";
 	return msg;
@@ -145,7 +149,7 @@ std::string primitive_list_to_string(const std::vector<int>& container) {
 
 std::string primitive_list_to_string(const std::vector<double>& container) {
 	std::string msg = "[";
-	std::for_each(std::begin(container), std::end(container), [&msg](const double& value) { msg += std::to_string(value) + ","; });
+	asa::for_each(container, [&msg](const double value) { msg += std::to_string(value) + ","; });
 	msg.pop_back();
 	msg += "]";
 	return msg;

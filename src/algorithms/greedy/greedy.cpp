@@ -1,59 +1,48 @@
 #include "greedy.h"
 
-void Greedy::solve(const SSCFLSO& instance, solution_and_value& SAV, Timer& timer, const bool gurobi_afterwards) {
+std::string Greedy::name() const {
+	return "Greedy";
+}
+
+bool Greedy::post_applyable() const {
+	return false;
+}
+
+void Greedy::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
 	// preprocess
-	Preprocess preprocess_algorithm = Preprocess();
-	facility_vector preprocessed_solution;
-	solution_and_value preprocessed_SAV = { preprocessed_solution, -1 };
-	preprocess_algorithm.solve(instance, preprocessed_SAV, timer, false);
-	if (is_empty(preprocessed_SAV.sol)) { return; }
+	Preprocess p = Preprocess();
+	solution_and_value SV = { facility_vector(instance.facilities, 0), -1};
+	p.solve(instance, SV, timer, report, false);
+	if (SV.val == -1) { return; }
 
 	// Compute utilities
-	std::vector<std::pair<int, double>> utilities = {};
-	{
-		for (int j = 0; j < instance.facilities; j++) {
-			if (preprocessed_SAV.sol[j] == 0) {
-				bisect_insert(utilities, std::pair<int, double>(j, -1), sort_by_second);
-			}
-			else {
-				double total_cost = (instance.facility_costs[j] + sum(instance.distribution_costs[j]));
-				double utility = (total_cost == 0) ? DBL_MAX : instance.capacities[j] / total_cost;
-				bisect_insert(utilities, std::pair<int, double>(j, utility), sort_by_second);
-			}
+	std::vector<std::pair<int, double>> utilities(instance.facilities);
+	int index = 0;
+	asa::generate(utilities, [&instance, &SV, &index]() -> std::pair<int, double> {
+		if (SV.sol[index] == 0) {
+			return std::pair<int, double>(index++, 0);
 		}
-	}
+		else {
+			double total_cost = (instance.facility_costs[index] + asa::sum(instance.distribution_costs[index], 0));
+			double utility = (total_cost == 0) ? DBL_MAX : instance.capacities[index] / total_cost;
+			return std::pair<int, double>(index++, utility);
+		}
+	});
+	asa::sort(utilities, [](const std::pair<int, double>& a, const std::pair<int, double>& b) -> bool { return a.second > b.second; }); //Sort in Desc
 
 	// Greedy
 	Validator FLV = Validator(instance);
 	facility_vector solution = facility_vector(instance.facilities, 0);
 	FLV.set_solution(solution);
-	int index = instance.facilities - 1; // Utilities are sorted in ascending order
+	int index = 0;
 	while (!FLV.feasible()) {
-		int facility = (utilities[index]).first;
-		assert(no_unnecessary_facilities[facility] == 1);
-		solution[facility] = 1;
-		if (!within_time_limit(start, time_limit)) { return; }
-		current_best = solution;
+		int facility_id = utilities[index++].first;
+		solution[facility_id] = 1;
 		FLV.set_solution(solution);
-		index--;
 	}
-
+	improve_solution(instance, current_best, solution, timer, report);
 	// Drop empty facilities afterwards
 	FLV.drop_empty_facilities();
-	if (!within_time_limit(start, time_limit)) { return; }
-
-	// Apply gurobi afterwards
-	current_best = FLV.get_solution();
-	if (gurobi_afterwards) {
-		auto remaining = time_limit - get_elapsed_time_ms(start);
-		if (remaining.count() < GUROBI_TIME_BUFFER) {
-			return;
-		}
-		solution = solve_with_gurobi(instance, remaining, current_best);
-
-		if (within_time_limit(start, time_limit)) {
-			std::cout << "Gurobi Afterwards Successful" << std::endl;
-			current_best = solution;
-		}
-	}
+	improve_solution(instance, current_best, solution, timer, report);
+	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }

@@ -4,6 +4,10 @@ std::string Preprocess::name() const {
 	return "Preprocessing";
 }
 
+bool Preprocess::post_applyable() const {
+	return false;
+}
+
 void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
 	facility_vector solution = facility_vector(instance.facilities, 1);
 	{
@@ -106,6 +110,9 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 				solution[facility_id] = solution[facility_id] && (1 - unnecessary_facility_candidates[facility_id]);
 			});
 		}
+	}
+	if (no_facility_is_open(solution)) {
+		return;
 	}
 	improve_solution(instance, current_best, solution, timer, report);
 	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }

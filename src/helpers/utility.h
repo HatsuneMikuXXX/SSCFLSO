@@ -75,6 +75,8 @@ void filter(facility_vector& facilities, const facility_predicate& predicate);
 
 void inverse(std::vector<int>& output, const std::vector<int>& input);
 
+bool no_facility_is_open(const facility_vector& solution);
+
 bool are_same(double a, double b);
 bool are_same(const std::vector<double>& a, const std::vector<double>& b);
 bool are_same(const std::vector<int>& a, const std::vector<int>& b);
@@ -84,6 +86,7 @@ int hamming_distance(const facility_vector& a, const facility_vector& b);
 // Returns ||v||_2
 double magnitude(const std::vector<double>& v);
 
+std::string primitive_list_to_string(const std::vector<bool>& container);
 std::string primitive_list_to_string(const std::vector<int>& container);
 std::string primitive_list_to_string(const std::vector<double>& container);
 

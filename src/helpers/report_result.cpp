@@ -31,8 +31,8 @@ void ReportResult::finishUp(const std::string& save_to_path) {
 	std::ofstream out(save_to_path);
 	out << "{\"Instance ID\" : \"" << this->instance_name << "\", ";
 	out << "\"Time limit\" : \"" << this->timelimit << "\", ";
-	out << "\"Algorithm\" : \"" << this->algorithm_name << "\",\n\t";
-	out << "\"Gurobi Postprocessing\" : \"" << this->gurobi_postprocessing << "\",\n\t";
+	out << "\"Algorithm\" : \"" << this->algorithm_name << "\", ";
+	out << "\"Gurobi Postprocessing\" : \"" << this->gurobi_postprocessing << "\", ";
 	out << "\"Feasible\" : " << this->LastSolutionFeasible << ", ";
 	out << "\"Solution Value\" : " << this->LastSolution.val << ", ";
 	out << "\"Solution\" : " << primitive_list_to_string(this->LastSolution.sol) << ", ";

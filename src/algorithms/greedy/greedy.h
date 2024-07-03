@@ -14,8 +14,8 @@
 */
 class Greedy : public Algorithm {
 public:
-	void solve(const SSCFLSO& instance, solution_and_value& SAV, Timer& timer, const bool gurobi_afterwards);
-private:
-	std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities);
+	void solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const;
+	std::string name() const;
+	bool post_applyable() const;
 };
 #endif

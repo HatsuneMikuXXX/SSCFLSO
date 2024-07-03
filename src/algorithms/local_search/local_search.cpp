@@ -1,5 +1,8 @@
 #include "local_search.h"
 
+LocalSearch::LocalSearch(){}
+
+LocalSearch::LocalSearch(INITIAL_SOLUTION init) : init(init) {}
 
 LocalSearch::LocalSearch(INITIAL_SOLUTION init, NEXT_NEIGHBOR next) : init(init), next(next) {}
 
@@ -14,6 +17,9 @@ std::string LocalSearch::name() const {
 		break;
 	case RANDOM:
 		id += "Random";
+		break;
+	case GIVEN:
+		id += "Given";
 		break;
 	default:
 		throw std::runtime_error("Initial solution code is non-existent!");
@@ -34,17 +40,28 @@ std::string LocalSearch::name() const {
 	return id;
 }
 
+bool LocalSearch::post_applyable() const {
+	return true;
+}
+
 void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
 	Validator FLV(instance);
-	facility_vector solution = produce_initial_solution(instance, FLV, timer, report);	
-	if (this->init != PREPROCESS) {
+	facility_vector solution = (this->init == GIVEN) ? current_best.sol : produce_initial_solution(instance, FLV, timer, report);	
+
+	if (this->init == PREPROCESS && no_facility_is_open(solution)) {
+		return;
+	}
+
+	if (this->init != PREPROCESS || this->init != GIVEN) {
 		improve_solution(instance, current_best, solution, timer, report);
 	}
 
-	if (this->init == PREPROCESS) {
+	if (this->init == PREPROCESS || this->init == GIVEN) {
 		// Search until stuck
-		while (get_next_neighbor(FLV, solution) && timer.in_time()) {
-			improve_solution(instance, current_best, solution, timer, report);
+		while (get_next_neighbor(FLV, solution)) {
+			if (improve_solution(instance, current_best, solution, timer, report) == TIMEOUT) {
+				break;
+			}
 		}
 	}
 	else {
@@ -57,6 +74,7 @@ void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_bes
 				improve_solution(instance, current_best, solution, timer, report);
 				SC_collection[sc_index].add(solution);
 			}
+			// We are stuck in a local optima, repeat the search from a freshly new solution
 			do {
 				solution = produce_initial_solution(instance, FLV, timer, report);
 			} while (asa::any_of(SC_collection, [&solution](const SolutionContainer& sc) -> bool { return sc.contains(solution); }));

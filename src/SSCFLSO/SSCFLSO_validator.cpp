@@ -6,6 +6,7 @@ Validator::Validator(const SSCFLSO& instance) : ref_instance(instance){
 }
 
 void Validator::set_solution(const facility_vector& solution){
+	if (solution == this->solution) { return; }
 	this->Feasibility.aCom = false;
 	this->Rating.aCom = false;
 	{
@@ -36,27 +37,27 @@ void Validator::set_solution(const facility_vector& solution){
 	asa::generate(this->assignment, find_most_preferred_and_open);
 
 	// Compute objective value.
-	client_vector clients = range(this->ref_instance.clients);
+	range_vector client_range = range(this->ref_instance.clients);
 	const distribution_cost_matrix& distribution_costs = this->ref_instance.distribution_costs;
 	const std::function<void(const int)> add_distribution_cost([this, &distribution_costs](const int client) -> void {
 		this->solution_value += distribution_costs[this->assignment[client]][client];
 	});
 	
 	this->solution_value = std::inner_product(std::begin(solution), std::end(solution), std::begin(this->ref_instance.facility_costs), 0.0);
-	asa::for_each(clients, add_distribution_cost);
+	asa::for_each(client_range, add_distribution_cost);
 	return;
 }
 
 facility_vector Validator::exceeds_capacity(){
 	facility_vector capacity_exceeding_facilities(this->ref_instance.facilities, 0);
 	capacity_vector capacities = this->ref_instance.capacities;
-	client_vector clients = range(this->ref_instance.clients);
+	range_vector client_range = range(this->ref_instance.clients);
 
 	// Reduce each capacity by the assigned demands. 
 	const std::function<void(const int&)> reduce_capacity([&capacities, this](const int& client) -> void {
 		capacities[this->assignment[client]] -= this->ref_instance.demands[client];
 	});
-	asa::for_each(clients, reduce_capacity);
+	asa::for_each(client_range, reduce_capacity);
 
 	// Determine facilities who cannot serve that much demand
 	auto cap_it = std::begin(capacities);

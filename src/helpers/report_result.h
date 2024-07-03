@@ -25,7 +25,7 @@ private:
 	const bool gurobi_postprocessing;
 	// Information to store
 	solution_and_value LastSolution;
-	bool LastSolutionFeasible;
+	bool LastSolutionFeasible{false};
 	std::vector<double> time_stamps{ std::vector<double>() };
 	std::vector<double> value_stamps{ std::vector<double>() };
 	std::vector<int> number_of_facilities_stamps{ std::vector<int>() };

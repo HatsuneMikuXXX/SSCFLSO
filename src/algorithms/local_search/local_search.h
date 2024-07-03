@@ -10,18 +10,22 @@ public:
 		PREPROCESS,
 		RANDOM_RESTART,
 		RANDOM,
+		GIVEN,
 	};
 	enum NEXT_NEIGHBOR {
 		BEST,
 		FIRST,
 	};
+	LocalSearch();
+	LocalSearch(INITIAL_SOLUTION init);
 	LocalSearch(INITIAL_SOLUTION init, NEXT_NEIGHBOR next);
 	void solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const;
 	std::string name() const;
-private:
-	const INITIAL_SOLUTION init;
-	const NEXT_NEIGHBOR next;
-	facility_vector produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report) const;
+	bool post_applyable() const;
 	bool get_next_neighbor(Validator& FLV, facility_vector& solution) const;
+	facility_vector produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report) const;
+private:
+	const INITIAL_SOLUTION init{PREPROCESS};
+	const NEXT_NEIGHBOR next{BEST};
 };
 #endif

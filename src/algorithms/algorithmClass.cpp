@@ -44,10 +44,11 @@ protected:
 		timer->pause_timer();
 		try {
 			if (where == GRB_CB_MIPSOL) {
-				facility_vector solution(numFacilities, -1);
+				facility_vector solution(numFacilities);
 				for (int j = 0; j < this->numFacilities; j++) {
-					solution[j] = open[j].get(GRB_DoubleAttr_X);
+					solution[j] = bool(open[j].get(GRB_DoubleAttr_X));
 				}
+
 				this->FLV->set_solution(solution);
 				if (this->FLV->feasible() && this->FLV->value() < this->current_best->val && timer->in_time()) {
 					this->current_best->sol = solution;
@@ -65,7 +66,7 @@ protected:
 	}
 };
 
-void Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& initial, Timer& timer, ReportResult& report) const {
+std::vector<double> Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& initial, Timer& timer, ReportResult& report, bool continuous = false) const {
 	const range_vector facility_range = range(instance.facilities);
 	const range_vector client_range = range(instance.clients);
 	const int m = facility_range.size();
@@ -76,14 +77,14 @@ void Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_a
 		env->set(GRB_IntParam_OutputFlag, 0); // Surpress Console
 		GRBModel model = GRBModel(*env);
 		// Facility variables
-		GRBVar* open = model.addVars(m, GRB_BINARY);
+		GRBVar* open = (continuous) ? model.addVars(m, GRB_CONTINUOUS) : model.addVars(m, GRB_BINARY);
 		asa::for_each(facility_range, [&open, &instance](const int facility_id) {
 			open[facility_id].set(GRB_DoubleAttr_Obj, instance.facility_costs[facility_id]);
 			});
 		// Distribution variables
 		GRBVar** distribution = new GRBVar * [instance.facilities];
-		asa::for_each(facility_range, [&distribution, &model, &n, &client_range, &instance](const int facility_id) {
-			distribution[facility_id] = model.addVars(n, GRB_BINARY);
+		asa::for_each(facility_range, [&distribution, &model, &n, &client_range, &instance, &continuous](const int facility_id) {
+			distribution[facility_id] = (continuous) ? model.addVars(n, GRB_CONTINUOUS) : model.addVars(n, GRB_BINARY);
 			asa::for_each(client_range, [&distribution, &instance, &facility_id](const int client_id) {
 				distribution[facility_id][client_id].set(GRB_DoubleAttr_Obj, instance.distribution_costs[facility_id][client_id]);
 			});
@@ -128,14 +129,22 @@ void Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_a
 		asa::for_each(facility_range, [&open, &initial](const int facility_id) {open[facility_id].set(GRB_DoubleAttr_Start, initial[facility_id]); });
 
 		// Callback - Required for frequent updates
-		Validator FLV = Validator(instance);
-		myCallback cb = myCallback(open, FLV, instance.facilities, current_best, timer, report);
-		model.setCallback(&cb);
+		if (!continuous) {
+			Validator FLV = Validator(instance);
+			myCallback cb = myCallback(open, FLV, instance.facilities, current_best, timer, report);
+			model.setCallback(&cb);
+		}
 		// Start solving
 		double remaining_time_limit_in_sec = timer.get_remaining_time() / 1000;
 		model.set(GRB_DoubleParam_TimeLimit, remaining_time_limit_in_sec);
 		model.optimize();
-		return;
+
+		if (!continuous) { return std::vector<double>(0); }
+		std::vector<double> res(m);
+		for (int j = 0; j < m; j++) {
+			res[j] = open[j].get(GRB_DoubleAttr_X);
+		}
+		return res;
 	}
 	catch (std::exception e) {
 		std::cerr << "Something went wrong:\n" << e.what() << std::endl;

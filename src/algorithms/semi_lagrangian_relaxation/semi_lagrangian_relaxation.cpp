@@ -1,140 +1,127 @@
 #include "semi_lagrangian_relaxation.h"
 
-void SemiLagrangianRelaxation::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) {
-	auto start = start_timer();
-	current_best = facility_vector(instance.facilities, 0);
-	Validator FLV = Validator(instance);
+SemiLagrangianRelaxation::SemiLagrangianRelaxation(bool homogenous_weight_update) : homogenous_weight_update(homogenous_weight_update){}
+
+std::string SemiLagrangianRelaxation::name() const {
+	return "Semi-Lagrangian Relaxation";
+}
+
+bool SemiLagrangianRelaxation::post_applyable() const {
+	return false;
+}
+
+void SemiLagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
+	facility_vector solution(instance.facilities);
+	
+	// Check if a feasible solution exists
+	Preprocess p = Preprocess();
+	p.solve(instance, current_best, timer, report, false);
+	if (current_best.val == -1) {
+		return;
+	}
+	
+	range_vector facility_range = range(instance.facilities);
+	range_vector client_range = range(instance.clients);
+	
 	// Create weight update matrix
 	std::vector<std::vector<double>> weights = weight_update_matrix(instance);
-	std::vector<double> SLR_weights = std::vector<double>(instance.clients, 0);
-	std::vector<double> final_weights = std::vector<double>(instance.clients, 0);
-	std::vector<int> index_set = std::vector<int>(instance.clients, 0);
-	for (int i = 0; i < instance.clients; i++) {
-		SLR_weights[i] = weights[i][0];
-		final_weights[i] = weights[i][weights[i].size() - 1];
-	}
+	std::vector<double> SLR_weights(instance.clients, 0);
+	std::vector<double> final_weights(instance.clients, 0);
+	std::vector<int> index_set(instance.clients, 0);
+	
+	asa::for_each(client_range, [&SLR_weights, &final_weights, &weights](const int client_id) {
+		SLR_weights[client_id] = weights[client_id][0];
+		final_weights[client_id] = weights[client_id].back();
+	});
 
 	// Create model and set weights
 	GRBModel model = constructSLRModel(instance);
-	for (int i = 0; i < instance.clients; i++) {
-		for (int j = 0; j < instance.facilities; j++) {
-			GRBVar x = model.getVarByName(std::to_string(j) + ":" + std::to_string(i));
-			x.set(GRB_DoubleAttr_Obj, instance.distribution_costs[j][i] - SLR_weights[i]);
-		}
-	}
+	asa::for_each(client_range, [&model, &instance, &SLR_weights, &facility_range](const int client_id) {
+		asa::for_each(facility_range, [&model, &instance, &SLR_weights, &client_id](const int facility_id) {
+			model.getVarByName(std::to_string(facility_id) + ":" + std::to_string(client_id)).set(GRB_DoubleAttr_Obj, instance.distribution_costs[facility_id][client_id] - SLR_weights[client_id]);
+		});
+	});
+
 	// Repeatedly solve
-	int iter = 0;
-	int maxIter = 1000;
-	bool start_hypothesis = false;
-	facility_vector comparison;
-	int no_change = 0;
 	do {
-		iter++;
 		// Solve
 		model.update();
-		model.set(GRB_DoubleParam_TimeLimit, 600);
+		model.set(GRB_DoubleParam_TimeLimit, timer.get_remaining_time());
 		model.optimize();
-		facility_vector solution = facility_vector(instance.facilities, -1);
-		for (int j = 0; j < instance.facilities; j++) {
-			GRBVar x = model.getVarByName(std::to_string(j));
-			solution[j] = x.get(GRB_DoubleAttr_X);
+
+		if (model.get(GRB_IntAttr_Status) != GRB_OPTIMAL) {
+			// Parameterized model not solved to optimality
+			return;
 		}
-		if (within_time_limit(start, time_limit)) {
-			current_best = solution;
-		}
-		if (start_hypothesis) {
-			if (areSame(solution, comparison)) {
-				no_change += 1;
-			}
-		}
-		else {
-			start_hypothesis = true;
-		}
-		comparison = solution;
-		std::vector<double> gradient = std::vector<double>(instance.clients, 1);
-		for (int i = 0; i < instance.clients; i++) {
-			for (int j = 0; j < instance.facilities; j++) {
-				GRBVar x = model.getVarByName(std::to_string(j) + ":" + std::to_string(i));
-				gradient[i] -= x.get(GRB_DoubleAttr_X);
-			}
-		}
+
+		// Copy solution
+		asa::for_each(facility_range, [&solution, &model](const int facility_id) {
+			solution[facility_id] = bool(model.getVarByName(std::to_string(facility_id)).get(GRB_DoubleAttr_X));
+		});
+		
+		// Compute gradient
+		std::vector<double> gradient(instance.clients, 1);
+		asa::for_each(client_range, [&facility_range, &model, &gradient](const int client_id) {
+			asa::for_each(facility_range, [&client_id, &model, &gradient](const int facility_id) {
+				gradient[client_id] -= model.getVarByName(std::to_string(facility_id) + ":" + std::to_string(client_id)).get(GRB_DoubleAttr_X);
+			});
+		});
+
 		if (magnitude(gradient) == 0) {
-			std::cout << "No improvements: " << no_change << std::endl;
-			std::cout << "Total iterations: " << iter << std::endl;
+			// Optimal solution found
+			improve_solution(instance, current_best, solution, timer, report);
 			return;
 		}
 		else {
 			// Update Weights
-			for (int i = 0; i < instance.clients; i++) {
-				if (gradient[i] > 0) {
-					index_set[i] += (index_set[i] == weights[i].size() - 1) ? 0 : 1;
-					SLR_weights[i] = weights[i][index_set[i]];
+			asa::for_each(client_range, [this, &gradient, &index_set, &SLR_weights, &weights](const int client_id) {
+				if (this->homogenous_weight_update || gradient[client_id] > 0) {
+					index_set[client_id] += (index_set[client_id] == weights[client_id].size() - 1) ? 0 : 1;
+					SLR_weights[client_id] = weights[client_id][index_set[client_id]];
 				}
-			}
-			for (int i = 0; i < instance.clients; i++) {
-				for (int j = 0; j < instance.facilities; j++) {
-					GRBVar x = model.getVarByName(std::to_string(j) + ":" + std::to_string(i));
-					x.set(GRB_DoubleAttr_Obj, instance.distribution_costs[j][i] - SLR_weights[i]);
-				}
-			}
+			});
+			// Prepare model
+			asa::for_each(client_range, [&instance, &facility_range, &model, &SLR_weights](const int client_id) {
+				asa::for_each(facility_range, [&instance, &client_id, &model, &SLR_weights](const int facility_id) {
+					model.getVarByName(std::to_string(facility_id) + ":" + std::to_string(client_id)).set(GRB_DoubleAttr_Obj, instance.distribution_costs[facility_id][client_id] - SLR_weights[client_id]);
+				});
+			});
 		}
-	} while (iter < maxIter && within_time_limit(start, time_limit));
-	std::cout << "No improvements: " << no_change << std::endl;
-	std::cout << "Total iterations: " << iter << std::endl;
+	} while (timer.in_time());
 };
 
+std::vector<std::vector<double>> SemiLagrangianRelaxation::weight_update_matrix(const SSCFLSO& instance) const {
+	range_vector facility_range = range(instance.facilities);
+	range_vector client_range = range(instance.clients);
 	
+	facility_cost_vector sorted_facility_cost = instance.facility_costs;
+	asa::sort(sorted_facility_cost, [](const double a, const double b) -> bool { return a < b; });
 
-std::string SemiLagrangianRelaxation::meta_information(){
-	std::ifstream file(PATH + "semi_lagrangian_relaxation/semi_lagrangian_relaxation.txt");
-	if (file) {
-		std::string content((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
-		return content;
-	}
-	else {
-		throw std::runtime_error("Semi Lagrangian Relaxation information file not found.");
-	}
-}
-
-std::vector<std::vector<double>> SemiLagrangianRelaxation::weight_update_matrix(const SSCFLSO& instance) {
-	const std::function<bool(const double&, const double&)> is_less = [](double a, double b) { return a < b; };
-	std::vector<double> sorted_facility_cost = {};
-	for (int j = 0; j < instance.facilities; j++) {
-		bisect_insert(sorted_facility_cost, instance.facility_costs[j], is_less);
-	}
-	std::vector<std::vector<double>> weights = {};
-	for (int i = 0; i < instance.clients; i++) {
-		weights.push_back(std::vector<double>());
+	std::vector<std::vector<double>> weights(0);
+	asa::for_each(client_range, [&sorted_facility_cost, &weights, &facility_range, &instance](const int client_id) {
+		weights.push_back(std::vector<double>(0));
 		double max_distance = -1;
-		for (int j = 0; j < instance.facilities; j++) {
-			bisect_insert(weights[i], instance.distribution_costs[j][i] + 0.005, is_less);
-			max_distance = (max_distance < instance.distribution_costs[j][i]) ? instance.distribution_costs[j][i] : max_distance;
-		}
+		asa::for_each(facility_range, [&instance, &client_id, &max_distance, &weights](const int facility_id) {
+			weights[client_id].push_back(instance.distribution_costs[facility_id][client_id] + 0.005);
+			max_distance = (max_distance < instance.distribution_costs[facility_id][client_id]) ? instance.distribution_costs[facility_id][client_id] : max_distance;
+		});
+
 		double accumulated_weight = max_distance + 0.005;
-		for (int j = 0; j < instance.facilities; j++) {
-			accumulated_weight += sorted_facility_cost[j];
-			bisect_insert(weights[i], accumulated_weight, is_less);
-		}
-		// Remove duplicates
-		double tmp = -1; // Weights are non-negative - so we can use negative numbers
-		auto it = weights[i].begin();
-		while (it != weights[i].end()) {
-			if (*it == tmp) {
-				it = weights[i].erase(it);
-				continue;
-			}
-			else {
-				tmp = *it;
-				it++;
-			}
-		}
-	}
+		asa::for_each(facility_range, [&client_id, &accumulated_weight, &sorted_facility_cost, &weights](const int facility_id) {
+			accumulated_weight += sorted_facility_cost[facility_id];
+			weights[client_id].push_back(accumulated_weight);
+		});
+		asa::sort(weights[client_id], [](const double a, const double b) -> bool { return a < b; });
+		weights[client_id].erase(std::unique(std::begin(weights[client_id]), std::end(weights[client_id])), std::end(weights[client_id]));
+	});
 	return weights;
 }
 
-GRBModel SemiLagrangianRelaxation::constructSLRModel(const SSCFLSO& instance) {
+GRBModel SemiLagrangianRelaxation::constructSLRModel(const SSCFLSO& instance) const {
 	int m = instance.facilities;
 	int n = instance.clients;
+	range_vector facility_range = range(m);
+	range_vector client_range = range(n);
 	try {
 		// Define the model
 		GRBEnv* env = new GRBEnv();
@@ -142,53 +129,55 @@ GRBModel SemiLagrangianRelaxation::constructSLRModel(const SSCFLSO& instance) {
 		GRBModel model = GRBModel(*env);
 		// Facility variables
 		GRBVar* open = model.addVars(m, GRB_BINARY);
-		for (int j = 0; j < m; j++) {
-			open[j].set(GRB_DoubleAttr_Obj, instance.facility_costs[j]);
-			open[j].set(GRB_StringAttr_VarName, std::to_string(j));
-		}
+		asa::for_each(facility_range, [&open, &instance](const int facility_id) {
+			open[facility_id].set(GRB_DoubleAttr_Obj, instance.facility_costs[facility_id]);
+			open[facility_id].set(GRB_StringAttr_VarName, std::to_string(facility_id));
+		});
+
 		// Distribution variables
 		GRBVar** distribution = new GRBVar * [instance.facilities];
-		for (int j = 0; j < m; j++) {
-			distribution[j] = model.addVars(n, GRB_BINARY);
-			for (int i = 0; i < n; i++) {
-				distribution[j][i].set(GRB_DoubleAttr_Obj, instance.distribution_costs[j][i]);
-				distribution[j][i].set(GRB_StringAttr_VarName, std::to_string(j) + ":" + std::to_string(i));
-			}
-		}
+		asa::for_each(facility_range, [&distribution, &instance, &n, &model, &client_range](const int facility_id) {
+			distribution[facility_id] = model.addVars(n, GRB_BINARY);
+			asa::for_each(client_range, [&distribution, &instance, &facility_id](const int client_id) {
+				distribution[facility_id][client_id].set(GRB_StringAttr_VarName, std::to_string(facility_id) + ":" + std::to_string(client_id));
+			});
+		});
+
 		// Objective
 		model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
+
 		// Constraint demand
-		for (int i = 0; i < n; i++) {
+		asa::for_each(client_range, [&facility_range, &distribution, &model](const int client_id) {
 			GRBLinExpr totdemand = 0;
-			for (int j = 0; j < m; j++) {
-				totdemand += distribution[j][i];
-			}
+			asa::for_each(facility_range, [&totdemand, &distribution, &client_id](const int facility_id) {
+				totdemand += distribution[facility_id][client_id];
+			});
 			model.addConstr(totdemand <= 1);
-		}
+		});
 
 		// Constraint capacity
-		for (int j = 0; j < m; j++) {
+		asa::for_each(facility_range, [&instance, &distribution, &model, &open, &client_range](const int facility_id) {
 			GRBLinExpr totdemand = 0;
-			for (int i = 0; i < n; i++) {
-				totdemand += instance.demands[i] * distribution[j][i];
-			}
-			model.addConstr(totdemand <= instance.capacities[j] * open[j]);
-		}
+			asa::for_each(client_range, [&totdemand, &instance, &distribution, &facility_id](const int client_id) {
+				totdemand += instance.demands[client_id] * distribution[facility_id][client_id];
+				});
+			model.addConstr(totdemand <= instance.capacities[facility_id] * open[facility_id]);
+			});
 
 		// Constraint preference
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < m; j++) {
-				GRBLinExpr preference = open[j];
-				bool start_to_add = false;
-				for (auto it = instance.preferences[i].begin(); it != instance.preferences[i].end(); it++) {
-					if (start_to_add) {
-						preference += distribution[*it][i];
+		asa::for_each(client_range, [&model, &facility_range, &open, &distribution, &instance](const int client_id) {
+			std::vector<int> rankings_of_client(0); // Low Rank-Value = High Preference
+			inverse(rankings_of_client, instance.preferences[client_id]);
+			asa::for_each(facility_range, [&model, &client_id, &open, &facility_range, &distribution, &rankings_of_client](const int facility_id) {
+				GRBLinExpr preference = open[facility_id];
+				asa::for_each(facility_range, [&client_id, &facility_id, &preference, &distribution, &rankings_of_client](const int worse_facility_id) {
+					if (rankings_of_client[worse_facility_id] > rankings_of_client[facility_id]) {
+						preference += distribution[worse_facility_id][client_id];
 					}
-					start_to_add = (*it == j) ? true : start_to_add;
-				}
+					});
 				model.addConstr(preference <= 1);
-			}
-		}
+				});
+		});
 		model.update();
 		return model;
 	}
