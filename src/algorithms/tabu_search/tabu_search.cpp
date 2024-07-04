@@ -35,6 +35,7 @@ void TabuSearch::solve(const SSCFLSO& instance, solution_and_value& current_best
 		LocalSearch ls = LocalSearch(LocalSearch::RANDOM);
 		solution = ls.produce_initial_solution(instance, FLV, timer, report);
 	}
+		break;
 	case GIVEN:
 	{
 		solution = current_best.sol;
@@ -68,11 +69,12 @@ void TabuSearch::solve(const SSCFLSO& instance, solution_and_value& current_best
 				search_exhausted = false;
 				best_neighbor = current_neighbor;
 			}
+			current_neighbor[facility_id] = bool(solution[facility_id]);
 		});
 		solution = best_neighbor;
 		tabu_list[tabu_index] = solution;
 		tabu_index = (tabu_index == tabu_size - 1) ? 0 : tabu_index + 1;
 		improve_solution(instance, current_best, solution, timer, report);
-	} while (!search_exhausted);
+	} while (!search_exhausted && timer.in_time());
 	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }

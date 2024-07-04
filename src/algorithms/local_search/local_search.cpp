@@ -86,6 +86,33 @@ void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_bes
 	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }
 
+bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Validator& FLV, Timer& timer) {
+	range_vector facility_range = range(initial_solution.size());
+	facility_vector tmp_neighbor;
+	facility_vector best_neighbor;
+	// Search
+	FLV.set_solution(initial_solution);
+	double rating = FLV.evaluate_inf_solution();
+	bool stuck_in_local_optima = false;
+	while (!FLV.feasible() && !stuck_in_local_optima && timer.in_time()) {
+		stuck_in_local_optima = true;
+		// Add-Remove-Neighborhood
+		asa::for_each(facility_range, [&initial_solution, &rating, &best_neighbor, &tmp_neighbor, &FLV, &stuck_in_local_optima](const int facility_id) {
+			tmp_neighbor = initial_solution;
+			tmp_neighbor[facility_id] = 1 - tmp_neighbor[facility_id];
+			FLV.set_solution(tmp_neighbor);
+			if (FLV.evaluate_inf_solution() < rating) {
+				best_neighbor = tmp_neighbor;
+				rating = FLV.evaluate_inf_solution();
+				stuck_in_local_optima = false;
+			}
+		});
+		initial_solution = best_neighbor;
+		FLV.set_solution(initial_solution);
+	}
+	return FLV.feasible();
+}
+
 facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report) const {
 	facility_vector initial_solution(instance.facilities, 0);
 
@@ -158,6 +185,7 @@ facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, V
 						}
 					});
 					initial_solution = best_neighbor;
+					FLV.set_solution(initial_solution);
 					SC_collection[sc_index].add(initial_solution);
 				}
 			} while (!FLV.feasible() && timer.in_time());
