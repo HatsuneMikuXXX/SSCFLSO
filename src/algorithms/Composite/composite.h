@@ -4,11 +4,11 @@
 
 class Composite : public Algorithm {
 public:
-	Composite()
+	Composite(const std::vector<Algorithm*>& algorithms);
 	void solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const;
 	std::string name() const;
 	bool post_applyable() const;
 private:
-	std::vector<Algorithm> algorithms;
+	const std::vector<Algorithm*> algorithms;
 };
 #endif

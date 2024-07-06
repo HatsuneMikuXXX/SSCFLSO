@@ -30,18 +30,25 @@ void TabuSearch::solve(const SSCFLSO& instance, solution_and_value& current_best
 		solution = SV.sol;
 	}
 		break;
+	case RANDOM_RESTART:
+	{
+		LocalSearch ls = LocalSearch(LocalSearch::RANDOM_RESTART);
+		solution = ls.produce_initial_solution(instance, FLV, timer, report);
+	}
+		break;
 	case RANDOM:
 	{
 		LocalSearch ls = LocalSearch(LocalSearch::RANDOM);
 		solution = ls.produce_initial_solution(instance, FLV, timer, report);
 	}
-		break;
+	break;
 	case GIVEN:
 	{
 		solution = current_best.sol;
 	}
 		break;
 	}
+	if (!timer.in_time()) { return; }
 
 	// Search
 	const int tabu_size = 10;

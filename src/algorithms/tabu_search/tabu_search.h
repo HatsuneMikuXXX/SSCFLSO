@@ -8,6 +8,7 @@ class TabuSearch : public Algorithm {
 public:
 	enum INITIAL_SOLUTION {
 		PREPROCESS,
+		RANDOM_RESTART,
 		RANDOM,
 		GIVEN,
 	};

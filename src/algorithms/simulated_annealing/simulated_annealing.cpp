@@ -1,5 +1,6 @@
 #include "simulated_annealing.h"
 
+SimulatedAnnealing::SimulatedAnnealing(const INITIAL_SOLUTION init) : init(init) {}
 
 std::string SimulatedAnnealing::name() const {
 	return "Simulated Annealing";
@@ -16,11 +17,37 @@ void SimulatedAnnealing::solve(const SSCFLSO& instance, solution_and_value& curr
 	Preprocess p = Preprocess();
 	solution_and_value SV{facility_vector(instance.facilities, 0), -1};
 	p.solve(instance, SV, timer, report, false);
-	solution = SV.sol;
+	Validator FLV(instance);
 	if (SV.val == -1) {
 		// Infeasible
 		return;
 	}
+	switch (this->init) {
+	case PREPROCESS:
+	{
+		solution = SV.sol;
+	}
+	break;
+	case RANDOM_RESTART:
+	{
+		LocalSearch ls = LocalSearch(LocalSearch::RANDOM_RESTART);
+		solution = ls.produce_initial_solution(instance, FLV, timer, report);
+	}
+	break;
+	case RANDOM:
+	{
+		LocalSearch ls = LocalSearch(LocalSearch::RANDOM);
+		solution = ls.produce_initial_solution(instance, FLV, timer, report);
+	}
+	break;
+	case GIVEN:
+	{
+		solution = current_best.sol;
+	}
+	break;
+	}
+
+	if (!timer.in_time()) { return; }
 
 	// Parameters
 	double temperature_min = 0.01;

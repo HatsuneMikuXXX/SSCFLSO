@@ -10,7 +10,7 @@
 
 
 typedef std::function<void(const SSCFLSO&, facility_vector&, const std::chrono::milliseconds&)> algorithm;
-void run(const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, int timelimit_in_milliseconds, Algorithm* const algo, const bool gurobi_afterwards);
+void run(const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, int timelimit_in_milliseconds, Algorithm* const algo_ptr, const bool gurobi_afterwards);
 
 
 /*
