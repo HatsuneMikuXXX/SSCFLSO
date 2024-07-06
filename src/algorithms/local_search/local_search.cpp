@@ -48,45 +48,59 @@ void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_bes
 	Validator FLV(instance);
 	facility_vector solution = (this->init == GIVEN) ? current_best.sol : produce_initial_solution(instance, FLV, timer, report);	
 
-	if (this->init == PREPROCESS && no_facility_is_open(solution)) {
-		return;
-	}
-
-	if (this->init != PREPROCESS || this->init != GIVEN) {
-		improve_solution(instance, current_best, solution, timer, report);
-	}
-
-	if (this->init == PREPROCESS || this->init == GIVEN) {
-		// Search until stuck
+	switch (this->init) {
+	case GIVEN:
+		FLV.set_solution(solution);
+		if (!FLV.feasible()) {
+			if (!attempt_to_find_feasible_solution(solution, FLV)) {
+				return;
+			}
+		}
 		while (get_next_neighbor(FLV, solution)) {
 			if (improve_solution(instance, current_best, solution, timer, report) == TIMEOUT) {
 				break;
 			}
 		}
-	}
-	else {
-		// Search and repeat
-		std::vector<SolutionContainer> SC_collection = {SolutionContainer(solution)};
-		int sc_index = 0;
-
-		while (timer.in_time()) {
-			while (get_next_neighbor(FLV, solution)) {
-				improve_solution(instance, current_best, solution, timer, report);
-				SC_collection[sc_index].add(solution);
-			}
-			// We are stuck in a local optima, repeat the search from a freshly new solution
-			do {
-				solution = produce_initial_solution(instance, FLV, timer, report);
-			} while (asa::any_of(SC_collection, [&solution](const SolutionContainer& sc) -> bool { return sc.contains(solution); }));
-
-			SC_collection.push_back(SolutionContainer(solution));
-			sc_index++;
+		break;
+	case PREPROCESS:
+		if (no_facility_is_open(solution)) {
+			return;
 		}
+		while (get_next_neighbor(FLV, solution)) {
+			if (improve_solution(instance, current_best, solution, timer, report) == TIMEOUT) {
+				break;
+			}
+		}
+		break;
+	case RANDOM:
+	case RANDOM_RESTART:
+		improve_solution(instance, current_best, solution, timer, report);
+		{
+			std::vector<SolutionContainer> SC_collection = { SolutionContainer(solution) };
+			int sc_index = 0;
+
+			while (timer.in_time()) {
+				while (get_next_neighbor(FLV, solution)) {
+					improve_solution(instance, current_best, solution, timer, report);
+					SC_collection[sc_index].add(solution);
+				}
+				// We are stuck in a local optima, repeat the search from a freshly new solution
+				do {
+					solution = produce_initial_solution(instance, FLV, timer, report);
+				} while (asa::any_of(SC_collection, [&solution](const SolutionContainer& sc) -> bool { return sc.contains(solution); }));
+
+				SC_collection.push_back(SolutionContainer(solution));
+				sc_index++;
+			}
+		}
+		break;
+	default:
+		break;
 	}
 	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }
 
-bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Validator& FLV, Timer& timer) {
+bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Validator& FLV, int maxIter = 10e5) {
 	range_vector facility_range = range(initial_solution.size());
 	facility_vector tmp_neighbor;
 	facility_vector best_neighbor;
@@ -94,7 +108,8 @@ bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Valida
 	FLV.set_solution(initial_solution);
 	double rating = FLV.evaluate_inf_solution();
 	bool stuck_in_local_optima = false;
-	while (!FLV.feasible() && !stuck_in_local_optima && timer.in_time()) {
+	int iter = 0;
+	while (!FLV.feasible() && !stuck_in_local_optima && iter++ < maxIter) {
 		stuck_in_local_optima = true;
 		// Add-Remove-Neighborhood
 		asa::for_each(facility_range, [&initial_solution, &rating, &best_neighbor, &tmp_neighbor, &FLV, &stuck_in_local_optima](const int facility_id) {

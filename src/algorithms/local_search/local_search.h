@@ -28,4 +28,5 @@ private:
 	const INITIAL_SOLUTION init{PREPROCESS};
 	const NEXT_NEIGHBOR next{BEST};
 };
+bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Validator& FLV, int maxIter = 10e5);
 #endif

@@ -67,7 +67,7 @@ void SemiLagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value
 			});
 		});
 
-		if (magnitude(gradient) == 0) {
+		if (magnitude(gradient) <= 10e-8) {
 			// Optimal solution found
 			improve_solution(instance, current_best, solution, timer, report);
 			return;

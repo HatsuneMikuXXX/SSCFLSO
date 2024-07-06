@@ -10,3 +10,4 @@ build
 *.vcxproj*
 x64/
 dirent/
+CppProperties.json

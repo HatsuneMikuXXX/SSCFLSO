@@ -19,9 +19,11 @@
 #include <time.h> 
 // Exception
 #include <stdexcept> 
-// Time
+// Durations
 #include <chrono> 
 // String manipulation
 #include <cctype>
+// DBL_MAX
+#include <float.h>
 
 #endif

@@ -11,7 +11,7 @@ public:
 	bool post_applyable() const;
 };
 
-facility_vector get_random_neighbor(int max_hamming_distance, const facility_vector& unnecessary, facility_vector& solution);
+facility_vector get_random_neighbor(int max_hamming_distance, const facility_vector& not_unnecessary, facility_vector& solution);
 
 
 #endif
