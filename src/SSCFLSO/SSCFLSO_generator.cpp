@@ -5,7 +5,7 @@
 */
 
 Generator::Generator(const int number_of_facilities, const int number_of_clients){
-	this->instance = {
+	instance = {
 		number_of_facilities,
 		number_of_clients,
 		demand_vector(number_of_clients, -1),
@@ -20,9 +20,9 @@ void Generator::set_preferences(const Category category){
 	// Takes a score function (input: client, facility) and assigns preferences using a score (return value of score function). High scores translate to high preference
 	auto assign_preferences = [this](const std::function<double(const int, const int)>& score_function) {
 		int facility_id = 0;
-		const int number_of_facilities = this->instance.facilities;
+		const int number_of_facilities = instance.facilities;
 		int client_id = 0;
-		const int number_of_clients = this->instance.clients;
+		const int number_of_clients = instance.clients;
 
 		// Generator function for scores
 		const std::function<std::pair<int, double>(const int)> generate_scores(
@@ -56,16 +56,16 @@ void Generator::set_preferences(const Category category){
 		});
 
 		// Execution
-		this->instance.preferences.clear();
-		this->instance.preferences.resize(this->instance.clients);
-		asa::generate(this->instance.preferences, generate_preferences);
+		instance.preferences.clear();
+		instance.preferences.resize(instance.clients);
+		asa::generate(instance.preferences, generate_preferences);
 	};
 
 	std::function<double(const int, const int)> score_function;
 	switch(category){
 		case closest_assignment:
 			score_function = [this](const int client, const int facility) {
-				return this->instance.distribution_costs[facility][client] * -1; //Remember: High value = High preference.
+				return instance.distribution_costs[facility][client] * -1; //Remember: High value = High preference.
 			};
 			break;
 		case perturbed_closest_assignment:
@@ -73,21 +73,21 @@ void Generator::set_preferences(const Category category){
 				// Determine minimal and maximal distances
 				int facility_id = 0;
 				const std::function<double()> gen([this, &client, &facility_id]() -> double { 
-					double res = this->instance.distribution_costs[facility_id][client];
+					double res = instance.distribution_costs[facility_id][client];
 					facility_id++;
 					return res;
 					});
-				std::vector<double> client_distances(this->instance.facilities);
+				std::vector<double> client_distances(instance.facilities);
 				asa::generate(client_distances, gen);
 				double min_dist = *std::min_element(std::begin(client_distances), std::end(client_distances));
 				double max_dist = *std::max_element(std::begin(client_distances), std::end(client_distances));
-				double true_cost = this->instance.distribution_costs[facility][client];
+				double true_cost = instance.distribution_costs[facility][client];
 				return triangular(min_dist, max_dist, true_cost) * -1; //Remember: High value = High preference.
 			};
 			break;
 		case farthest_assignment:
 			score_function = [this](const int client, const int facility) {
-				return this->instance.distribution_costs[facility][client];
+				return instance.distribution_costs[facility][client];
 			};
 			break;
 		default:
@@ -237,21 +237,21 @@ SSCFLSO Generator::load_instance(const std::string& path, const bool preferences
 
 // Setter and Getter
 const SSCFLSO& Generator::get_instance() const {
-	return this->instance;
+	return instance;
 }
 
 void Generator::set_demand(const int client, const double demand) {
-	this->instance.demands[client] = demand;
+	instance.demands[client] = demand;
 }
 
 void Generator::set_capacity(const int facility, const double capacity) {
-	this->instance.capacities[facility] = capacity;
+	instance.capacities[facility] = capacity;
 }
 
 void Generator::set_facility_cost(const int facility, const double facility_cost) {
-	this->instance.facility_costs[facility] = facility_cost;
+	instance.facility_costs[facility] = facility_cost;
 }
 
 void Generator::set_distribution_cost(const int facility, const int client, const double distribution_cost) {
-	this->instance.distribution_costs[facility][client] = distribution_cost;
+	instance.distribution_costs[facility][client] = distribution_cost;
 }

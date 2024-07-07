@@ -46,9 +46,9 @@ bool LocalSearch::post_applyable() const {
 
 void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
 	Validator FLV(instance);
-	facility_vector solution = (this->init == GIVEN) ? current_best.sol : produce_initial_solution(instance, FLV, timer, report);	
+	facility_vector solution = (init == GIVEN) ? current_best.sol : produce_initial_solution(instance, FLV, timer, report);	
 
-	switch (this->init) {
+	switch (init) {
 	case GIVEN:
 		FLV.set_solution(solution);
 		if (!FLV.feasible()) {
@@ -131,7 +131,7 @@ bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Valida
 facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, Validator& FLV, Timer& timer, ReportResult& report) const {
 	facility_vector initial_solution(instance.facilities, 0);
 
-	switch (this->init) {
+	switch (init) {
 	case PREPROCESS:
 		{
 			Preprocess p = Preprocess();
@@ -228,7 +228,7 @@ bool LocalSearch::get_next_neighbor(Validator& FLV, facility_vector& solution) c
 			tmp[*it] = 1;
 			FLV.set_solution(tmp);
 			if (FLV.feasible() && FLV.value() < solution_value) {
-				switch (this->next) {
+				switch (next) {
 				case FIRST:
 					solution = tmp;
 					return true;
@@ -252,7 +252,7 @@ bool LocalSearch::get_next_neighbor(Validator& FLV, facility_vector& solution) c
 				tmp[*it2] = 0;
 				FLV.set_solution(tmp);
 				if (FLV.feasible() && FLV.value() < solution_value) {
-					switch (this->next) {
+					switch (next) {
 					case FIRST:
 						solution = tmp;
 						return true;
@@ -276,7 +276,7 @@ bool LocalSearch::get_next_neighbor(Validator& FLV, facility_vector& solution) c
 			tmp[*it] = 0;
 			FLV.set_solution(tmp);
 			if (FLV.feasible() && FLV.value() < solution_value) {
-				switch (this->next) {
+				switch (next) {
 				case FIRST:
 					solution = tmp;
 					return true;

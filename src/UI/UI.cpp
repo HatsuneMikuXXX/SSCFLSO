@@ -13,8 +13,9 @@ void start_UI(int argc, char* argv[]) {
 
     // Scan Input - Generate Token Array
     TOKEN token_string[maxArgc] = {NO_TOKEN};
+    std::vector<Token> stack(0);
     for (int i = 1; i < argc; i++) {
-        token_string[i] = scan_arg(token_string[i - 1], argv[i]);
+        token_string[i] = scan_arg(stack, argv[i]);
         if (token_string[i] == INVALID) {
             std::cout << invalid_msg << std::endl;
             return;
@@ -114,7 +115,7 @@ Algorithm* algorithmFactory(TOKEN algoToken) {
 	}
 }
 
-TOKEN scan_arg(const TOKEN& last_token, char* argument) {
+TOKEN scan_arg(std::vector<Token>& stack, char* argument) {
     std::string input(argument);
 
     switch (last_token) {

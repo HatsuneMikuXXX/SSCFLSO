@@ -22,7 +22,7 @@ void SimulatedAnnealing::solve(const SSCFLSO& instance, solution_and_value& curr
 		// Infeasible
 		return;
 	}
-	switch (this->init) {
+	switch (init) {
 	case PREPROCESS:
 	{
 		solution = SV.sol;

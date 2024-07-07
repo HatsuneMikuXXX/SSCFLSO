@@ -75,7 +75,7 @@ void SemiLagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value
 		else {
 			// Update Weights
 			asa::for_each(client_range, [this, &gradient, &index_set, &SLR_weights, &weights](const int client_id) {
-				if (this->homogenous_weight_update || gradient[client_id] > 0) {
+				if (homogenous_weight_update || gradient[client_id] > 0) {
 					index_set[client_id] += (index_set[client_id] == weights[client_id].size() - 1) ? 0 : 1;
 					SLR_weights[client_id] = weights[client_id][index_set[client_id]];
 				}

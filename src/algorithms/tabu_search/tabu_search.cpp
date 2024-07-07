@@ -24,7 +24,7 @@ void TabuSearch::solve(const SSCFLSO& instance, solution_and_value& current_best
 
 	facility_vector solution(instance.facilities, 0);
 	Validator FLV(instance);
-	switch (this->init) {
+	switch (init) {
 	case PREPROCESS:
 	{
 		solution = SV.sol;

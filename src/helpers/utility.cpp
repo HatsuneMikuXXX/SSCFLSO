@@ -3,13 +3,13 @@
 SolutionContainer::SolutionContainer(const facility_vector& root) : root(root), tail(root) {}
 
 void SolutionContainer::add(const facility_vector& next) {
-	assert(next.size() == this->root.size());
+	assert(next.size() == root.size());
 	int index = 0;
 	bool no_change = true;
 	asa::for_each(next, [this, &index, &no_change](const bool facility_is_open) {
-		if (facility_is_open != this->tail[index]) {
-			this->change_log.push_back((index + 1));
-			this->tail[index++] = facility_is_open;
+		if (facility_is_open != tail[index]) {
+			change_log.push_back((index + 1));
+			tail[index++] = facility_is_open;
 			no_change = false;
 		}
 		else {
@@ -22,14 +22,14 @@ void SolutionContainer::add(const facility_vector& next) {
 }
 
 bool SolutionContainer::contains(const facility_vector& val) const {
-	assert(val.size() == this->root.size());
+	assert(val.size() == root.size());
 	// Compute difference vector and hamming distance
 	std::vector<bool> d(val.size());
 	int hd = 0;
 
 	int index = 0;
 	asa::generate(d, [this, &val, &index, &hd]() -> bool {
-		if (this->root[index] != val[index++]) {
+		if (root[index] != val[index++]) {
 			hd++;
 			return true;
 		}
@@ -40,8 +40,8 @@ bool SolutionContainer::contains(const facility_vector& val) const {
 		return true;
 	}
 	index = 0;
-	while (index < this->change_log.size()) {
-		int log_entry = this->change_log[index++];
+	while (index < change_log.size()) {
+		int log_entry = change_log[index++];
 		int true_index = (log_entry < 0) ? (-log_entry) - 1 : log_entry - 1;
 		hd += d[true_index] ? -1 : 1;
 		if (log_entry < 0 && hd == 0) {
