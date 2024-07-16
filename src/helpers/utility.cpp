@@ -154,3 +154,13 @@ std::string primitive_list_to_string(const std::vector<double>& container) {
 	msg += "]";
 	return msg;
 }
+
+void expect_solution(Algorithm* algo, const SSCFLSO& instance, const int time_limit, const facility_vector& expected_solution) {
+	Timer timer(time_limit);
+	ReportResult dummy_report = ReportResult::dummy_report();
+	solution_and_value SV = { facility_vector(instance.facilities, 0), -1 };
+	algo->solve(instance, SV, timer, dummy_report, false);
+	if (SV.sol != expected_solution) {
+		throw std::runtime_error("Returned solution is unexpected.");
+	}
+}

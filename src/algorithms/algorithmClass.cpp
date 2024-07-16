@@ -31,12 +31,12 @@ public:
 	Timer* timer;
 	ReportResult* report;
 	myCallback(GRBVar* open, Validator& FLV, const int numFacilities, solution_and_value& current_best, Timer& timer, ReportResult& report) {
-		this->open = open;
-		this->FLV = &FLV;
-		this->numFacilities = numFacilities;
-		this->current_best = &current_best;
-		this->timer = &timer;
-		this->report = &report;
+		open = open;
+		FLV = &FLV;
+		numFacilities = numFacilities;
+		current_best = &current_best;
+		timer = &timer;
+		report = &report;
 		
 	}
 protected:
@@ -45,17 +45,17 @@ protected:
 		try {
 			if (where == GRB_CB_MIPSOL) {
 				facility_vector solution(numFacilities);
-				for (int j = 0; j < this->numFacilities; j++) {
+				for (int j = 0; j < numFacilities; j++) {
 					solution[j] = bool(open[j].get(GRB_DoubleAttr_X));
 				}
 
-				this->FLV->set_solution(solution);
-				if (this->FLV->feasible() && this->FLV->value() < this->current_best->val && timer->in_time()) {
-					this->current_best->sol = solution;
-					this->current_best->val = FLV->value();
-					this->report->evalResult(*this->current_best, *this->timer);
+				FLV->set_solution(solution);
+				if (FLV->feasible() && FLV->value() < current_best->val && timer->in_time()) {
+					current_best->sol = solution;
+					current_best->val = FLV->value();
+					report->evalResult(*current_best, *timer);
 				}
-				std::cout << "Solution value: " << this->FLV->value() << std::endl;
+				std::cout << "Solution value: " << FLV->value() << std::endl;
 			}
 		}
 		catch (GRBException e) {

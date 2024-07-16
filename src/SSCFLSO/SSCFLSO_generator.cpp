@@ -18,6 +18,7 @@ Generator::Generator(const int number_of_facilities, const int number_of_clients
 
 void Generator::set_preferences(const Category category){
 	// Takes a score function (input: client, facility) and assigns preferences using a score (return value of score function). High scores translate to high preference
+	// If scores are equal, always prefer the lexicographical smaller facility
 	auto assign_preferences = [this](const std::function<double(const int, const int)>& score_function) {
 		int facility_id = 0;
 		const int number_of_facilities = instance.facilities;
@@ -36,7 +37,7 @@ void Generator::set_preferences(const Category category){
 		// Predicate to order pairs
 		const std::function<bool(const std::pair<int, double>&, const std::pair<int, double>&)> GEQ(
 			[](const std::pair<int, double>& facility_score_a, const std::pair<int, double>& facility_score_b) -> bool {
-				return facility_score_a.second >= facility_score_b.second; 
+				return (facility_score_a.second > facility_score_b.second) || (facility_score_a.second == facility_score_b.second && facility_score_a.first < facility_score_b.first); 
 			});
 
 		// Generator function for preferences

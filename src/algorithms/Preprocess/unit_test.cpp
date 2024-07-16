@@ -14,20 +14,15 @@ bool PreprecessUnitTest::run_tests() {
 }
 
 void PreprocessUnitTest::test1() {
-	facility_vector check = facility_vector(100, 0);
 	SSCFLSO instance = Generator::load_instance("instances/unit_tests/unit_test_infeasible1.plc");
-	Preprocess preprocess = Preprocess();
-	if (preprocess.preprocess(instance) != check) {
-		throw std::runtime_error("Solution space is empty but a feasible solution has still been found.");
-	}
-	check[69] = 1;
+	Preprocess p = Preprocess();
+	facility_vector expected_solution = facility_vector(100, 0);
+	expect_solution(&p, instance, ONE_MINUTE, expected_solution);
 	instance = Generator::load_instance("instances/unit_tests/unit_test_only69.plc");
-	if (preprocess.preprocess(instance) != check) {
-		throw std::runtime_error("Only facility 69 can be opened but the returned solution is different.");
-	}
+	expected_solution[69] = 1;
+	expect_solution(&p, instance, ONE_MINUTE, expected_solution);
 	instance = Generator::load_instance("instances/unit_tests/unit_test_preprocess.plc");
-	check = preprocess.preprocess(instance);
-	if (check[0] == 1) {
-		throw std::runtime_error("Facility 0 is unnecessary but still included.");
-	}
+	expected_solution.resize(2);
+	expected_solution[1] = 1;
+	expect_solution(&p, instance, ONE_MINUTE, expected_solution);
 }

@@ -3,6 +3,7 @@
 #include "../common.h"
 #include "../constants.h"
 #include "../typedefinitions.h"
+#include "../algorithms/algorithmClass.h"
 
 template<typename T>
 struct alreadyComputed {
@@ -12,7 +13,7 @@ struct alreadyComputed {
 
 class SolutionContainer {
 public:
-	SolutionContainer(const facility_vector& root);
+	 (const facility_vector& root);
 	void add(const facility_vector& next);
 	bool contains(const facility_vector& val) const ;
 private:
@@ -89,6 +90,8 @@ double magnitude(const std::vector<double>& v);
 std::string primitive_list_to_string(const std::vector<bool>& container);
 std::string primitive_list_to_string(const std::vector<int>& container);
 std::string primitive_list_to_string(const std::vector<double>& container);
+
+void expect_solution(Algorithm* algo, const SSCFLSO& instance, const int time_limit, const facility_vector& expected_solution);
 
 #include "utility_impl.h"
 #endif

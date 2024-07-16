@@ -4,6 +4,5 @@
 #include "../../SSCFLSO/SSCFLSO_generator.h"
 namespace RoundingUnitTest {
 	bool run_tests();
-	void test1();
 }
 #endif

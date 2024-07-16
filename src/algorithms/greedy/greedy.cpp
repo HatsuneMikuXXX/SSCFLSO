@@ -15,7 +15,7 @@ void Greedy::solve(const SSCFLSO& instance, solution_and_value& current_best, Ti
 	p.solve(instance, SV, timer, report, false);
 	if (SV.val == -1) { return; }
 
-	// Compute utilities
+	// Compute utilities: Capacity divided by total cost
 	std::vector<std::pair<int, double>> utilities(instance.facilities);
 	int index = 0;
 	asa::generate(utilities, [&instance, &SV, &index]() -> std::pair<int, double> {

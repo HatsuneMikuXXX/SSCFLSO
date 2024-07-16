@@ -1,5 +1,9 @@
 #include "report_result.h"
 
+ReportResult::ReportResult() {
+	finishedUp = true;
+}
+
 ReportResult::ReportResult(
 	const SSCFLSO& instance, 
 	const std::string& instance_name, 
@@ -11,33 +15,40 @@ ReportResult::ReportResult(
 	timelimit(timelimit), 
 	algorithm_name(algorithm_name), 
 	gurobi_postprocessing(gurobi_postprocessing) {
+	finishedUp = false;
+}
+
+ReportResult ReportResult::dummy_report() {
+	static ReportResult dummy = ReportResult();
+	return dummy;
 }
 
 void ReportResult::evalResult(const solution_and_value& current_best, Timer& timer) {
-	if (this->finishedUp) { return; }
-	this->LastSolution = current_best;
-	this->time_stamps.push_back(timer.get_elapsed_time());
-	this->value_stamps.push_back(this->LastSolution.val);
-	this->number_of_facilities_stamps.push_back(asa::sum(this->LastSolution.sol, 0));
+	if (finishedUp) { return; }
+	LastSolution = current_best;
+	time_stamps.push_back(timer.get_elapsed_time());
+	value_stamps.push_back(LastSolution.val);
+	number_of_facilities_stamps.push_back(asa::sum(LastSolution.sol, 0)); // This works even of type vector<bool>
 }
 
 void ReportResult::finishUp(const std::string& save_to_path) {
-	this->finishedUp = true;
+	if (finishedUp) { return; }
+	finishedUp = true;
 	// Compute feasibility
-	Validator FLV = Validator(this->instance);
-	FLV.set_solution(this->LastSolution.sol);
-	this->LastSolutionFeasible = FLV.feasible();
+	Validator FLV = Validator(instance);
+	FLV.set_solution(LastSolution.sol);
+	LastSolutionFeasible = FLV.feasible();
 	// Write result
 	std::ofstream out(save_to_path);
-	out << "{\"Instance ID\" : \"" << this->instance_name << "\", ";
-	out << "\"Time limit\" : \"" << this->timelimit << "\", ";
-	out << "\"Algorithm\" : \"" << this->algorithm_name << "\", ";
-	out << "\"Gurobi Postprocessing\" : \"" << this->gurobi_postprocessing << "\", ";
-	out << "\"Feasible\" : " << this->LastSolutionFeasible << ", ";
-	out << "\"Solution Value\" : " << this->LastSolution.val << ", ";
-	out << "\"Solution\" : " << primitive_list_to_string(this->LastSolution.sol) << ", ";
-	out << "\"Time stamps\" : " << primitive_list_to_string(this->time_stamps) << ", ";
-	out << "\"Value stamps\" : " << primitive_list_to_string(this->value_stamps) << ", ";
-	out << "\"Number of open facilities stamps\" : " << primitive_list_to_string(this->number_of_facilities_stamps) << "} ";
+	out << "{\"Instance ID\" : \"" << instance_name << "\", ";
+	out << "\"Time limit\" : \"" << timelimit << "\", ";
+	out << "\"Algorithm\" : \"" << algorithm_name << "\", ";
+	out << "\"Gurobi Postprocessing\" : \"" << gurobi_postprocessing << "\", ";
+	out << "\"Feasible\" : " << LastSolutionFeasible << ", ";
+	out << "\"Solution Value\" : " << LastSolution.val << ", ";
+	out << "\"Solution\" : " << primitive_list_to_string(LastSolution.sol) << ", ";
+	out << "\"Time stamps\" : " << primitive_list_to_string(time_stamps) << ", ";
+	out << "\"Value stamps\" : " << primitive_list_to_string(value_stamps) << ", ";
+	out << "\"Number of open facilities stamps\" : " << primitive_list_to_string(number_of_facilities_stamps) << "} ";
 	out.close();
 }

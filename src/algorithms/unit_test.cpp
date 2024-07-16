@@ -17,17 +17,17 @@ void AlgorithmUnitTest::test1(){
 	SSCFLSO instance = Generator::load_instance("instances/unit_tests/unit_test_small.plc");
 	solution_and_value SV = {facility_vector(instance.facilities, 0), -1};
 	facility_vector solution({1, 1, 0, 0, 0});
-	Timer timer(10 * 1000);
-	ReportResult report(instance, "Small", "results/test/AlgorithmUnitTest.json");
+	Timer timer(ONE_MINUTE);
+	ReportResult report = ReportResult::dummy_report();
 	Algorithm::UPDATE_CODE expected_result;
-	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report, true);
+	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report);
 	assert(expected_result == Algorithm::UPDATE_CODE::TIMER_NOT_RUNNING);
 	timer.start_timer();
-	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report, true);
+	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report);
 	assert(expected_result == Algorithm::UPDATE_CODE::IMPROVED);
-	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report, true);
+	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report);
 	assert(expected_result == Algorithm::UPDATE_CODE::NOT_IMPROVED);
 	while (timer.in_time()) {}
-	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report, true);
+	expected_result = Algorithm::improve_solution(instance, SV, solution, timer, report);
 	assert(expected_result == Algorithm::UPDATE_CODE::TIMEOUT);
 }

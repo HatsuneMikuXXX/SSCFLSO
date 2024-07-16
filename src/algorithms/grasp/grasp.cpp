@@ -1,5 +1,7 @@
 #include "grasp.h"
 
+GRASP::GRASP() {}
+
 GRASP::GRASP(int maxIter) : maxIter(maxIter) {}
 
 std::string GRASP::name() const {
@@ -23,7 +25,7 @@ void GRASP::solve(const SSCFLSO& instance, solution_and_value& current_best, Tim
 	std::vector<SolutionContainer> sc_collection(0);
 	int sc_index = 0;
 
-	while (iter++ < this->maxIter) {
+	while (iter++ < maxIter && timer.in_time()) {
 		greedy_random(FLV, SV.sol, solution);
 		if (asa::any_of(sc_collection, [&solution](const SolutionContainer& sc) -> bool { return sc.contains(solution); })) {
 			continue;
@@ -64,7 +66,7 @@ void GRASP::greedy_random(Validator& FLV, const facility_vector& CL, facility_ve
 		asa::sort(utilities, [](const std::pair<int, double>& a, const std::pair<int, double>& b) -> bool { return a.second > b.second; }); //Sort in Desc
 
 		// Construct RCL
-		double threshold = (1. - this->RCL_percentile) * utilities[0].second + this->RCL_percentile * utilities.back().second;
+		double threshold = (1. - RCL_percentile) * utilities[0].second + RCL_percentile * utilities.back().second;
 		auto it = std::find_if(std::begin(utilities), std::end(utilities), [&threshold](const std::pair<int, double>& elem) -> bool { return elem.second < threshold; });
 		utilities.erase(it, utilities.end());
 
