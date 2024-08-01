@@ -20,7 +20,7 @@ double Timer::get_elapsed_time() const {
 		return elapsed_time_until_last_pause;
 	}
 	else {
-		double elapsed_time_since_last_pause = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - most_recent_start).count();
+		double elapsed_time_since_last_pause = double(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - most_recent_start).count());
 		return elapsed_time_until_last_pause + elapsed_time_since_last_pause;
 	}
 }

@@ -15,7 +15,8 @@ void LagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value& cu
 	// Find an upper bound
 	LocalSearch ls = LocalSearch(LocalSearch::PREPROCESS, LocalSearch::FIRST);
 	ls.solve(instance, current_best, timer, report, false);
-	if (current_best.val == -1) {
+	FLV.set_solution(current_best.sol);
+	if (!FLV.feasible()) {
 		// Infeasible
 		return;
 	}
@@ -36,14 +37,19 @@ void LagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value& cu
 
 	// Parameters
 	double beta = 2;
+
+	// Helper
 	double LR_value = DBL_MAX;
 	double no_improvements_counter = 0;
 
 	// Apply LR
 	do {
 		// Solve
-		model.set(GRB_DoubleParam_TimeLimit, timer.get_remaining_time());
+		model.set(GRB_DoubleParam_TimeLimit, timer.get_remaining_time() / 1000);
 		model.optimize();
+		if (model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
+			return;
+		}
 
 		if (model.get(GRB_IntAttr_Status) != GRB_OPTIMAL) {
 			// Parameterized model not solved to optimality
@@ -70,7 +76,9 @@ void LagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value& cu
 		// Update weights
 		update_weights(facility_range, client_range, weights, instance, beta, UB, model);
 		update_weights_of_model(instance, facility_range, client_range, model, weights);
+		
 	} while (timer.in_time());
+
 	FLV.set_solution(solution);
 	if (!FLV.feasible() && !attempt_to_find_feasible_solution(solution, FLV)) {
 		return;
@@ -115,9 +123,7 @@ double LagrangianRelaxation::get_gradient_magnitude(const range_vector& facility
 
 
 void LagrangianRelaxation::update_weights(const range_vector& facility_range, const range_vector& client_range, Weights& weights, const SSCFLSO& instance, double beta, double UB, GRBModel& model) const {
-	// Compute the gradient parts, each loop represents a relaxed constraint
-	
-
+	// ### Compute the gradient parts, each loop represents a relaxed constraint ###
 	// Alpha scalar value
 	double gradient_magnitude = get_gradient_magnitude(facility_range,client_range, instance, model);
 	double alpha = (gradient_magnitude > 0) ? beta * (model.get(GRB_DoubleAttr_ObjVal) - UB) / gradient_magnitude : 0;
@@ -217,5 +223,6 @@ GRBModel LagrangianRelaxation::constructLRModel(const SSCFLSO& instance) const {
 	catch (std::exception e) {
 		std::cerr << "Something went wrong:\n" << e.what() << std::endl;
 	}
+	return NULL;
 }
 

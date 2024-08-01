@@ -1,7 +1,9 @@
 #ifndef TIMER_H
 #define TIMER_H
+#include <chrono> 
+#include <cassert>
 
-#include "../common.h"
+const int ONE_MINUTE = 60000;
 
 class Timer {
 public:

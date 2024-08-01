@@ -13,8 +13,8 @@ public:
 		GIVEN,
 	};
 	enum NEXT_NEIGHBOR {
-		BEST,
-		FIRST,
+		BEST = 200,
+		FIRST = 201,
 	};
 	LocalSearch();
 	LocalSearch(INITIAL_SOLUTION init);

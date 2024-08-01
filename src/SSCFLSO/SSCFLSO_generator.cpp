@@ -26,10 +26,10 @@ void Generator::set_preferences(const Category category){
 		const int number_of_clients = instance.clients;
 
 		// Generator function for scores
-		const std::function<std::pair<int, double>(const int)> generate_scores(
-			[&facility_id, &number_of_facilities, &score_function](const int client) -> std::pair<int, double> {
+		const std::function<std::pair<int, double>()> generate_scores(
+			[&client_id, &facility_id, &number_of_facilities, &score_function]() -> std::pair<int, double> {
 				assert(facility_id < number_of_facilities);
-				std::pair<int, double> facility_score_pair(facility_id, score_function(client, facility_id));
+				std::pair<int, double> facility_score_pair(facility_id, score_function(client_id, facility_id));
 				facility_id++;
 				return facility_score_pair;
 			});
@@ -59,6 +59,7 @@ void Generator::set_preferences(const Category category){
 		// Execution
 		instance.preferences.clear();
 		instance.preferences.resize(instance.clients);
+		client_id = 0;
 		asa::generate(instance.preferences, generate_preferences);
 	};
 
@@ -228,7 +229,7 @@ SSCFLSO Generator::load_instance(const std::string& path, const bool preferences
 			std::vector<int> preferences_of_client = std::vector<int>();
 			// Maybe here a cast problem, we'll see
 			for (int access = (tmp + client * J); access < (tmp + (client + 1) * J); access++) {
-				preferences_of_client.push_back(data[access]);
+				preferences_of_client.push_back(int(data[access]));
 			}
 			res.instance.preferences[client] = preferences_of_client;
 		}

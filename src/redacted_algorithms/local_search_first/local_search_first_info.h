@@ -1,3 +1,4 @@
+/*
 #ifndef LSF_INFO_H
 #define LSF_INFO_H
 
@@ -18,3 +19,4 @@ Parameters: None.
 )~~~~";
 
 #endif
+*/

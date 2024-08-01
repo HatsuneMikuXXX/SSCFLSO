@@ -1,3 +1,4 @@
+/*
 #ifndef RANDOMIZED_RESTART_INFO_H
 #define RANDOMIZED_RESTART_INFO_H
 
@@ -14,3 +15,4 @@ Parameters: None.
 )~~~~";
 
 #endif
+*/

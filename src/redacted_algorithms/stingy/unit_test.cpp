@@ -1,3 +1,4 @@
+/*
 #include "unit_test.h"
 
 bool StingyUnitTest::run_tests(){
@@ -27,4 +28,4 @@ void StingyUnitTest::test1(){
 		throw std::runtime_error("The returned solution should be of size 3 and contain the facilities 2 and 3.");
 	}
 }
-
+*/

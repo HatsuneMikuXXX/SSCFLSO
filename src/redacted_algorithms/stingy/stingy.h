@@ -1,3 +1,4 @@
+/*
 #ifndef STINGY_H
 #define STINGY_H
 #include "../../algorithms/algorithmClass.h"
@@ -9,3 +10,4 @@ class Stingy : public Algorithm {
 		std::string meta_information();
 };
 #endif
+*/

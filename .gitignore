@@ -3,7 +3,6 @@
 notes.bat
 reminder.txt
 bin
-gurobi
 build
 .vs/
 *.sln

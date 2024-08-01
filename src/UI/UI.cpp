@@ -165,7 +165,7 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
             std::cout << "No parameter given for simulated annealing. Skipping over.";
             return NULL;
         }
-        switch (token_string[current_index++) {
+        switch (token_string[current_index++]) {
         case SOLBY_GIVEN_PARAM:
            return new SimulatedAnnealing(SimulatedAnnealing::GIVEN);
         case SOLBY_PREPROCESS_PARAM:
@@ -190,14 +190,14 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
         case SOLBY_RANDOM_RESTART_PARAM:
             return new TabuSearch(TabuSearch::RANDOM_RESTART);
         }
-    case LOCAL_SEARCH_ALGO:
+    case LOCAL_SEARCH_ALGO: {
         if (current_index + 2 >= max_index) {
             std::cout << "Not enough parameter given for local search. Skipping over.";
             return NULL;
         }
         TOKEN t1 = token_string[current_index++];
         TOKEN t2 = token_string[current_index++];
-        if (t1 != NEXTNEIGHBOR_BEST_PARAM || t1 != NEXTNEIGHBOR_FIRST_PARAM) {
+        if (t1 != NEXTNEIGHBOR_BEST_PARAM && t1 != NEXTNEIGHBOR_FIRST_PARAM) {
             TOKEN tmp = t1;
             t1 = t2;
             t2 = tmp;
@@ -226,20 +226,24 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
                 return new LocalSearch(LocalSearch::RANDOM_RESTART, LocalSearch::FIRST);
             }
         }
-    case COMPOSITE_ALGO:
+    }
+       
+    case COMPOSITE_ALGO: {
         std::vector<Algorithm*> algorithms(0);
-        std::function<bool(TOKEN)> part_of_composition([](const TOKEN token) -> bool{
+        std::function<bool(TOKEN)> part_of_composition([](const TOKEN token) -> bool {
             // Either algo (not composition) or param
-            bool b1 = asa::any_of(algo_tokens, [token](const TOKEN algo_token) -> bool { token == algo_token; });
-            bool b2 = asa::any_of(init_param_tokens, [token](const TOKEN init_token) -> bool { token == init_token; });
-            bool b3 = asa::any_of(next_param_tokens, [token](const TOKEN next_token) -> bool { token == next_token; });
+            bool b1 = asa::any_of(algo_tokens, [token](const TOKEN algo_token) -> bool { return token == algo_token; });
+            bool b2 = asa::any_of(init_param_tokens, [token](const TOKEN init_token) -> bool {return  token == init_token; });
+            bool b3 = asa::any_of(next_param_tokens, [token](const TOKEN next_token) -> bool { return token == next_token; });
 
             return (token != COMPOSITE_ALGO) && (b1 || b2 || b3);
-        });
+            });
         while (current_index + 1 < max_index && part_of_composition(token_string[++current_index])) {
             algorithms.push_back(algorithmFactory(token_string, current_index, max_index));
         }
         return new Composite(algorithms);
+    }
+        
 	default:
         return NULL;
 	}
@@ -280,6 +284,7 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
     case 1:
         switch (stack[0]) {
         case RUN_FLAG:
+        {
             // Expect a directory or file
             stack.clear();
             struct stat s;
@@ -295,6 +300,7 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
                 return INVALID;
             }
             return INVALID;
+        }
         case INPUT_DIRECTORY_PATH:
         case INPUT_FILE_PATH:
             stack.clear();
@@ -309,7 +315,7 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
             // Expect a time limit
             stack.clear();
             try {
-                std::stoi(input);
+                int dontcare = std::stoi(input);
                 stack.push_back(TIMELIMIT);
                 return TIMELIMIT;
             }
@@ -538,11 +544,10 @@ void execute_run_command(
         try {
             const SSCFLSO instance = Generator::load_instance(inputSource, true);
             std::string filename = inputSource;
-            int pos = 0;
+            size_t pos = 0;
             while ((pos = filename.find("/")) != std::string::npos) {
                 filename.erase(0, pos + 1);
             }
-            const std::string filename = filename;
             for (int i = 0; i < algoObjectsSize; i++) {
                 if (algoObjects[i] != NULL) {
                     run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);

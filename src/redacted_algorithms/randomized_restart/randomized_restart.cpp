@@ -1,3 +1,4 @@
+/*
 #include "randomized_restart.h"
 #include "../../helpers/random.h"
 
@@ -106,3 +107,4 @@ bool RandomizedRestart::rr_contains(const std::vector<facility_vector>& containe
 std::string RandomizedRestart::meta_information() {
 	return randomized_restart_info;
 }
+*/

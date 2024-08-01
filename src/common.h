@@ -5,25 +5,10 @@
 #include <map>
 #include <string> 
 #include <functional> 
+// Special values
+#include <float.h>
 // Functions
 #include <math.h> 
 #include <algorithm>
 #include <numeric>
-#include <cassert>
-// Stream
-#include <fstream> 
-#include <iostream> 
-#include <sstream>
-// Random and Seed
-#include <random> 
-#include <time.h> 
-// Exception
-#include <stdexcept> 
-// Durations
-#include <chrono> 
-// String manipulation
-#include <cctype>
-// DBL_MAX
-#include <float.h>
-
 #endif

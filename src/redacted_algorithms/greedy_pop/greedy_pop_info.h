@@ -1,3 +1,4 @@
+/*
 #ifndef GREEDY_POP_INFO_H
 #define GREEDY_POP_INFO_H
 
@@ -26,3 +27,4 @@ Parameters: None.
 )~~~~";
 
 #endif
+*/

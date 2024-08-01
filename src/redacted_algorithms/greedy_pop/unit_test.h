@@ -1,3 +1,4 @@
+/*
 #ifndef GREEDY_POP_UNIT_TEST_H
 #define GREEDY_POP_UNIT_TEST_H
 #include "greedy_pop.h"
@@ -7,3 +8,4 @@ namespace GreedyPopUnitTest{
 	void test1();
 }
 #endif
+*/

@@ -5,19 +5,20 @@ Validator::Validator(const SSCFLSO& instance) : ref_instance(instance){
 	assignment = client_facility_assignment(instance.clients, -1);
 }
 
-void Validator::set_solution(const facility_vector& solution){
-	if (solution == solution) { return; }
-	Feasibility.aCom = false;
-	Rating.aCom = false;
+void Validator::set_solution(const facility_vector& input_solution){
+	if (solution == input_solution) { return; }
+
+	feasibility_already_computed = false;
+	infeasible_solution_rating_already_computed = false;
 	{
 		// Solution vector must be binary
 		assert((solution.size() == ref_instance.facilities), "Solution length is incorrect");
 		assert(asa::all_of(solution, [](const int b) -> bool { return b == 0 || b == 1; }));
 	}
-	solution = solution;
+	solution = input_solution;
 	if (asa::all_of(solution, [](const int facility_open) -> bool { return facility_open == 0; })) {
-		Feasibility.aCom = true;
-		Feasibility.value = false;
+		feasibility_already_computed = true;
+		is_feasible = false;
 		assignment = client_facility_assignment(ref_instance.clients, -1);
 		solution_value = -1;
 		return;
@@ -25,12 +26,12 @@ void Validator::set_solution(const facility_vector& solution){
 
 	// Determine assignment.
 	const preference_matrix& preferences = ref_instance.preferences;
-	const std::function<bool(const int)> is_open([&solution](const int facility_id) -> bool { return solution[facility_id] == 1; });
+	const std::function<bool(const int)> is_open([&input_solution](const int facility_id) -> bool { return input_solution[facility_id] == 1; });
 	int client_id = 0;
 	const std::function<int()> find_most_preferred_and_open([&client_id, &preferences, &is_open]() -> int {
 		const auto res_it = std::find_if(std::begin(preferences[client_id]), std::end(preferences[client_id]), is_open);
 		client_id++;
-		return std::distance(std::begin(preferences[client_id]), res_it);
+		return *res_it;
 	});
 	assignment.clear();
 	assignment = client_facility_assignment(ref_instance.clients);
@@ -64,15 +65,14 @@ facility_vector Validator::exceeds_capacity(){
 	while (cap_it != std::end(capacities)) {
 		cap_it = std::find_if(cap_it, std::end(capacities), [](const double value) -> bool { return value < 0; });
 		if (cap_it != std::end(capacities)) {
-			capacity_exceeding_facilities[std::distance(std::begin(capacities), cap_it)] = 1;
+			capacity_exceeding_facilities[std::distance(std::begin(capacities), cap_it++)] = 1;
 		}
-		cap_it++;
 	}
 	const int sum_of_capacity_exceeding_facilities = asa::sum(capacity_exceeding_facilities, 0);
-	Feasibility.aCom = true;
-	Feasibility.value = sum_of_capacity_exceeding_facilities == 0;
-	Rating.aCom = true;
-	Rating.value = sum_of_capacity_exceeding_facilities;
+	feasibility_already_computed = true;
+	is_feasible = sum_of_capacity_exceeding_facilities == 0;
+	infeasible_solution_rating_already_computed = true;
+	infeasible_solution_rating = sum_of_capacity_exceeding_facilities;
 	return capacity_exceeding_facilities;
 }
 
@@ -88,7 +88,7 @@ void Validator::drop_empty_facilities() {
 }
 
 double Validator::evaluate_inf_solution() {
-	return (Rating.aCom) ? Rating.value : asa::sum(exceeds_capacity(), 0);
+	return (infeasible_solution_rating_already_computed) ? infeasible_solution_rating : asa::sum(exceeds_capacity(), 0);
 }
 
 const facility_vector& Validator::get_solution() const {
@@ -104,5 +104,60 @@ double Validator::value() const {
 }
 
 bool Validator::feasible() {
-	return (Feasibility.aCom) ? Feasibility.value : asa::sum(exceeds_capacity(), 0) == 0;
+	return (feasibility_already_computed) ? is_feasible : asa::sum(exceeds_capacity(), 0) == 0;
+}
+
+
+SolutionContainer::SolutionContainer(const facility_vector& root) : root(root), tail(root) {}
+
+void SolutionContainer::add(const facility_vector& next) {
+	assert(next.size() == root.size());
+	int index = 0;
+	bool no_change = true;
+	asa::for_each(next, [this, &index, &no_change](const bool facility_is_open) {
+		if (facility_is_open != tail[index]) {
+			change_log.push_back((index + 1));
+			tail[index++] = facility_is_open;
+			no_change = false;
+		}
+		else {
+			index++;
+		}
+		});
+	if (!no_change) {
+		change_log.back() *= -1;
+	}
+}
+
+bool SolutionContainer::contains(const facility_vector& val) const {
+	assert(val.size() == root.size());
+	// Compute difference vector and hamming distance
+	std::vector<bool> d(val.size());
+	int hd = 0;
+
+	int index = 0;
+	asa::generate(d, [this, &val, &index, &hd]() -> bool {
+		if (root[index] != val[index]) {
+			index++;
+			hd++;
+			return true;
+		}
+		index++;
+		return false;
+	});
+	// Do the comparison
+	if (hd == 0) {
+		return true;
+	}
+	index = 0;
+	while (index < change_log.size()) {
+		int log_entry = change_log[index++];
+		int true_index = (log_entry < 0) ? (-log_entry) - 1 : log_entry - 1;
+		hd += d[true_index] ? -1 : 1;
+		if (log_entry < 0 && hd == 0) {
+			return true;
+		}
+		d[true_index] = !d[true_index];
+	}
+	return false;
 }

@@ -1,3 +1,4 @@
+/*
 #include "greedy_pop.h"
 
 void GreedyPop::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) {
@@ -81,4 +82,4 @@ std::vector<std::pair<int, double>> GreedyPop::utility(const SSCFLSO& instance, 
 std::string GreedyPop::meta_information() {
 	return greedy_pop_info;
 }
-
+*/

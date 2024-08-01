@@ -11,12 +11,14 @@ bool SemiLagrangianRelaxation::post_applyable() const {
 }
 
 void SemiLagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
+	Validator FLV(instance);
 	facility_vector solution(instance.facilities);
 	
 	// Check if a feasible solution exists
 	Preprocess p = Preprocess();
 	p.solve(instance, current_best, timer, report, false);
-	if (current_best.val == -1) {
+	FLV.set_solution(current_best.sol);
+	if (!FLV.feasible()) {
 		return;
 	}
 	
@@ -184,6 +186,7 @@ GRBModel SemiLagrangianRelaxation::constructSLRModel(const SSCFLSO& instance) co
 	catch (std::exception e) {
 		std::cerr << "Something went wrong:\n" << e.what() << std::endl;
 	}
+	return NULL;
 }
 
 

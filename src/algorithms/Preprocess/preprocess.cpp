@@ -13,7 +13,7 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 	{
 		// Remove facilities with a too small capacity
 		const double minimum_demand = *min_element(std::begin(instance.demands), std::end(instance.demands));
-		facility_predicate facilities_to_keep = [&instance, &minimum_demand](const int facility_id) 
+		std::function<bool(int)> facilities_to_keep = [&instance, &minimum_demand](const int facility_id)
 			-> bool { return instance.capacities[facility_id] >= minimum_demand; };
 		filter(solution, facilities_to_keep);
 	}
@@ -34,7 +34,7 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 	{
 		// Remove unnecessary facilities (too unpopular-issue)
 		// First, compute some helpful information/data structures
-		const double total_demand = asa::sum(instance.demands, 0);
+		const double total_demand = double(asa::sum(instance.demands, 0.0));
 		const std::vector<int> facility_range = range(instance.facilities);
 
 		// Define heuristic
@@ -56,7 +56,7 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 					minCapacity += c;
 				}
 			});
-			return (minCapacity >= total_demand) ? min : -1;;
+			return (minCapacity >= total_demand) ? min : -1;
 		};
 
 		// Define function to rank facilities
@@ -77,14 +77,12 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 				rankings.push_back(ranking);
 			});
 		});
-
 		// Determine unnecessary facilities here
 		bool cannot_remove_further_unnecessary_facilities = false;
 		while (!cannot_remove_further_unnecessary_facilities) {
 			int min = LB_facilities_required_heuristic(solution);
 			if (min == -1) { break; }
 			assign_ranks();
-			
 			// Compute unnecessary facilities - start by assuming that all facilities are unnecessary
 			facility_vector unnecessary_facility_candidates = solution;
 			int number_unnecessary_facilities = asa::sum(unnecessary_facility_candidates, 0);
@@ -103,8 +101,7 @@ void Preprocess::solve(const SSCFLSO& instance, solution_and_value& current_best
 					break;
 				}
 				counter++;
-			}			
-			
+			}
 			// Update
 			asa::for_each(facility_range, [&solution, &unnecessary_facility_candidates](const int facility_id) {
 				solution[facility_id] = solution[facility_id] && (1 - unnecessary_facility_candidates[facility_id]);

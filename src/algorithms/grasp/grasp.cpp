@@ -2,7 +2,7 @@
 
 GRASP::GRASP() {}
 
-GRASP::GRASP(int maxIter) : maxIter(maxIter) {}
+GRASP::GRASP(int maxIter, double RCL_percentile) : maxIter(maxIter), RCL_percentile(RCL_percentile) {}
 
 std::string GRASP::name() const {
 	return "GRASP";
@@ -13,30 +13,34 @@ bool GRASP::post_applyable() const {
 }
 
 void GRASP::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
+	Validator FLV(instance);
 	facility_vector solution(instance.facilities, 0);
 	int iter = 0;
 	// Prepare 
 	Preprocess p = Preprocess();
 	solution_and_value SV = {facility_vector(instance.facilities, 0), -1};
 	p.solve(instance, SV, timer, report, false);
-	if (SV.val == -1) { return; }
-	Validator FLV(instance);
+	FLV.set_solution(SV.sol);
+	if (!FLV.feasible()) { return; }
 	LocalSearch ls = LocalSearch(LocalSearch::GIVEN, LocalSearch::FIRST);
-	std::vector<SolutionContainer> sc_collection(0);
+	std::vector<SolutionContainer> sc_collection;
 	int sc_index = 0;
-
 	while (iter++ < maxIter && timer.in_time()) {
 		greedy_random(FLV, SV.sol, solution);
 		if (asa::any_of(sc_collection, [&solution](const SolutionContainer& sc) -> bool { return sc.contains(solution); })) {
 			continue;
 		}
+		
 		sc_collection.push_back(SolutionContainer(solution));
 		improve_solution(instance, current_best, solution, timer, report);
 		FLV.set_solution(solution);
 		// Perform "Local Search First"
 		while (ls.get_next_neighbor(FLV, solution)) {
 			sc_collection[sc_index].add(solution);
-			improve_solution(instance, current_best, solution, timer, report);
+			auto code = improve_solution(instance, current_best, solution, timer, report);
+			if (code == Algorithm::TIMEOUT) {
+				return;
+			}
 		}
 		sc_index++;
 	}
@@ -50,7 +54,7 @@ void GRASP::greedy_random(Validator& FLV, const facility_vector& CL, facility_ve
 	FLV.set_solution(tmp);
 	do {
 		// Compute utilities
-		std::vector<std::pair<int, double>> utilities(solution.size());
+		std::vector<std::pair<int, double>> utilities({});
 
 		asa::for_each(facility_range, [&tmp, &FLV, &CL, &utilities](const int facility_id) {
 			if (CL[facility_id] == 0 || tmp[facility_id] == 1) {
@@ -64,14 +68,14 @@ void GRASP::greedy_random(Validator& FLV, const facility_vector& CL, facility_ve
 			}
 		});
 		asa::sort(utilities, [](const std::pair<int, double>& a, const std::pair<int, double>& b) -> bool { return a.second > b.second; }); //Sort in Desc
-
 		// Construct RCL
 		double threshold = (1. - RCL_percentile) * utilities[0].second + RCL_percentile * utilities.back().second;
-		auto it = std::find_if(std::begin(utilities), std::end(utilities), [&threshold](const std::pair<int, double>& elem) -> bool { return elem.second < threshold; });
+		auto it = std::find_if(std::begin(utilities), std::end(utilities), [&threshold](const std::pair<int, double>& elem) -> bool { return elem.second < threshold - 10e-7; });
 		utilities.erase(it, utilities.end());
-
+		
 		// Choose element at random
-		int facility_id = uniform(0, utilities.size() - 1, true);
+		int index = int(uniform(0, double(utilities.size()) - 1, true));
+		int facility_id = utilities[index].first;
 		tmp[facility_id] = 1;
 		FLV.set_solution(tmp);
 	} while (!FLV.feasible());

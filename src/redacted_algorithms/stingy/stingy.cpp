@@ -1,3 +1,4 @@
+/*
 #include "stingy.h"
 void Stingy::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) {
 	auto start = start_timer();
@@ -38,3 +39,4 @@ std::string Stingy::meta_information() {
 		throw std::runtime_error("Stingy information file not found.");
 	}
 }
+*/

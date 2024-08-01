@@ -1,3 +1,4 @@
+/*
 #include "unit_test.h"
 
 bool GreedyPopUnitTest::run_tests(){
@@ -27,4 +28,5 @@ void GreedyPopUnitTest::test1(){
 		throw std::runtime_error("The returned solution should be of size 2 and contain at least the facilities 1 and 2.");
 	}
 }
+*/
 

@@ -1,3 +1,4 @@
+/*
 #ifndef RANDOMIZED_RESTART_H
 #define RANDOMIZED_RESTART_H
 #include "../algorithmClass.h"
@@ -10,3 +11,4 @@ private:
 	bool rr_contains(const std::vector<facility_vector>& container, const facility_vector& x);
 };
 #endif
+*/

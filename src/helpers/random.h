@@ -1,7 +1,7 @@
 #ifndef RANDOM_H
 #define RANDOM_H
-#include "../common.h"
-#include "../helpers/utility.h"
+#include <math.h> 
+#include <stdexcept> 
 // Return a random value from [0, 1]
 double random();
 // Return a uniformly-drawn, random value from {0, 1}

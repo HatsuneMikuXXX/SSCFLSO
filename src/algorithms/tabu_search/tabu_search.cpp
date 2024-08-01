@@ -12,18 +12,18 @@ bool TabuSearch::post_applyable() const {
 
 void TabuSearch::solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const {
 	// Prepare
+	Validator FLV(instance);
 	range_vector facility_range = range(instance.facilities);
 	Preprocess p = Preprocess();
-	solution_and_value SV{facility_vector(instance.facilities, 0)};
+	solution_and_value SV{facility_vector(instance.facilities, 0), -1};
 	p.solve(instance, SV, timer, report, false);
-	
-	if (SV.val == -1) {
+	FLV.set_solution(SV.sol);
+	if (!FLV.feasible()) {
 		// Infeasible
 		return;
 	}
 
 	facility_vector solution(instance.facilities, 0);
-	Validator FLV(instance);
 	switch (init) {
 	case PREPROCESS:
 	{
@@ -53,7 +53,8 @@ void TabuSearch::solve(const SSCFLSO& instance, solution_and_value& current_best
 	// Search
 	const int tabu_size = 10;
 	std::vector<facility_vector> tabu_list(tabu_size, facility_vector(instance.facilities, 0));
-	int tabu_index = 0;
+	tabu_list[0] = solution;
+	int tabu_index = 1;
 	std::function<bool(const facility_vector&)> is_tabu([&tabu_list](const facility_vector& solution) -> bool {
 		return asa::any_of(tabu_list, [&solution](const facility_vector& tabu) -> bool {return tabu == solution; });
 	});
@@ -75,6 +76,7 @@ void TabuSearch::solve(const SSCFLSO& instance, solution_and_value& current_best
 			if (FLV.feasible() && FLV.value() < best_value) {
 				search_exhausted = false;
 				best_neighbor = current_neighbor;
+				best_value = FLV.value();
 			}
 			current_neighbor[facility_id] = bool(solution[facility_id]);
 		});

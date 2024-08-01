@@ -1,3 +1,4 @@
+/*
 #ifndef LOCAL_SEARCH_FIRST_H
 #define LOCAL_SEARCH_FIRST_H
 #include "../algorithmClass.h"
@@ -9,3 +10,4 @@ public:
 	std::string meta_information();
 };
 #endif
+*/

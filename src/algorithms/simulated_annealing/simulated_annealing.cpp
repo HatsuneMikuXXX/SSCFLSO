@@ -18,7 +18,8 @@ void SimulatedAnnealing::solve(const SSCFLSO& instance, solution_and_value& curr
 	solution_and_value SV{facility_vector(instance.facilities, 0), -1};
 	p.solve(instance, SV, timer, report, false);
 	Validator FLV(instance);
-	if (SV.val == -1) {
+	FLV.set_solution(SV.sol);
+	if (!FLV.feasible()) {
 		// Infeasible
 		return;
 	}
@@ -69,14 +70,16 @@ void SimulatedAnnealing::solve(const SSCFLSO& instance, solution_and_value& curr
 		});
 	}
 
-	int inner_iterations = int(instance.facilities * 0.1);
-	const std::function<double(double)> cooling_schedule([](const double temperature) -> double { return 0.95 * temperature; });
+	// for the cooling schedule
+	const std::function<double(double)> cooling_schedule([](const double temperature) -> double { return 0.99 * temperature; });
 
 	// Solving process
 	double current_temperature = temperature_max;
 	int max_hamming_distance = 2;
+	double alpha = 0.7;
+	int inner_iterations = int(instance.facilities) + int(0.5 * (instance.facilities * instance.facilities - instance.facilities));
+	inner_iterations *= alpha;
 	facility_vector neighbor;
-	Validator FLV(instance);
 	FLV.set_solution(solution);
 	double current_solution_value = FLV.value();
 	do {
@@ -90,7 +93,10 @@ void SimulatedAnnealing::solve(const SSCFLSO& instance, solution_and_value& curr
 			if (FLV.value() < current_solution_value) {
 				solution = neighbor;
 				current_solution_value = FLV.value();
-				improve_solution(instance, current_best, solution, timer, report);
+				auto code = improve_solution(instance, current_best, solution, timer, report);
+				if (code == Algorithm::TIMEOUT) {
+					return;
+				}
 			}
 			else {
 				bool accept = random() < exp((current_solution_value - FLV.value())/current_temperature); //Enumerator is non-positive => exp in (0, 1] 
@@ -118,12 +124,12 @@ facility_vector get_random_neighbor(int max_hamming_distance, const facility_vec
 	});
 	if (candidates.size() == 0) { return neighbor; }
 
-	max_hamming_distance = (max_hamming_distance > candidates.size()) ? candidates.size() : max_hamming_distance;
+	max_hamming_distance = (max_hamming_distance > candidates.size()) ? int(candidates.size()) : max_hamming_distance;
 
 	// Choose a random hamming distance
-	int hamming_distance = uniform(1, max_hamming_distance, true);
+	int hamming_distance = int(uniform(1, max_hamming_distance, true));
 	while (hamming_distance-- > 0) {
-		int tmp = uniform(0, candidates.size() - 1, true);
+		int tmp = int(uniform(0, double(candidates.size() - 1), true));
 		int candidate = candidates[tmp];
 		neighbor[candidate] = bool(1 - neighbor[candidate]);
 		candidates.erase(std::begin(candidates) + tmp);

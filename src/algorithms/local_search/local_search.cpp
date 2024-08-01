@@ -100,7 +100,9 @@ void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_bes
 	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }
 
-bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Validator& FLV, int maxIter = 10e5) {
+bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Validator& FLV, int maxIter) {
+	if (no_facility_is_open(initial_solution)) { return false; }
+	
 	range_vector facility_range = range(initial_solution.size());
 	facility_vector tmp_neighbor;
 	facility_vector best_neighbor;
@@ -161,7 +163,7 @@ facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, V
 			solution_and_value SV = { facility_vector(instance.facilities, 0), -1 };
 			p.solve(instance, SV, timer, report, false);
 
-			std::vector<SolutionContainer> SC_collection(0);
+			std::vector<SolutionContainer> SC_collection;
 			int sc_index = -1;
 
 			bool stuck_in_local_optima = false;
@@ -270,7 +272,7 @@ bool LocalSearch::get_next_neighbor(Validator& FLV, facility_vector& solution) c
 		}
 
 		// Remove-Neighborhood
-		auto it = std::begin(facility_range);
+		it = std::begin(facility_range);
 		while (it != std::end(facility_range)) {
 			if (!solution[*it]) { it++; continue; }
 			tmp[*it] = 0;

@@ -2,11 +2,10 @@
 #define ALGORITHM_H
 
 #include <gurobi_c++.h>
-#include "../typedefinitions.h"
 #include "../SSCFLSO/SSCFLSO_validator.h"
 #include "../helpers/utility.h"
 #include "../helpers/timer.h"
-#include "../helpers/report_result.h"
+#include "../tracking/report_result.h"
 
 class Algorithm {
 public:

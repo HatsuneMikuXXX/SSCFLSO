@@ -1,4 +1,5 @@
 #include "random.h"
+
 double random(){
 	return double(rand())/RAND_MAX;
 }
@@ -12,16 +13,19 @@ bool biased_flip(const double p) {
 }
 
 double uniform(const double lower_bound, const double upper_bound, const bool integer){
+	if (upper_bound == lower_bound) {
+		return lower_bound;
+	}
 	if (!integer) {
 		const double r = random();
 		return r * lower_bound + (1. - r) * upper_bound;
 	}
 	else {
 		const double r = random();
-		const int new_lb = ceil(lower_bound);
-		const int new_ub = floor(upper_bound) + 1; //We round down afterwards.
+		const int new_lb = int(ceil(lower_bound));
+		const int new_ub = int(floor(upper_bound)) + 1; //We round down afterwards.
 		const double floating_point_sample = r * new_lb + (1. - r) * new_ub;
-		const int integer_point_sample = floor(floating_point_sample);
+		const int integer_point_sample = int(floor(floating_point_sample));
 		if (integer_point_sample == new_ub) {
 			// Extra fail-safe. Probability of this occuring is almost never happening.
 			return new_ub - 1;

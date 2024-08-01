@@ -1,3 +1,4 @@
+/*
 #include "local_search_first.h"
 
 void LocalSearchFirst::solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards) {
@@ -53,3 +54,4 @@ void LocalSearchFirst::solve(const SSCFLSO& instance, facility_vector& current_b
 std::string LocalSearchFirst::meta_information() {
 	return lsf_info;
 }
+*/

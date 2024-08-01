@@ -1,26 +1,9 @@
 #ifndef HELPER_H
 #define HELPER_H
 #include "../common.h"
-#include "../constants.h"
-#include "../typedefinitions.h"
-#include "../algorithms/algorithmClass.h"
 
-template<typename T>
-struct alreadyComputed {
-	bool aCom = false;
-	T value;
-};
-
-class SolutionContainer {
-public:
-	 (const facility_vector& root);
-	void add(const facility_vector& next);
-	bool contains(const facility_vector& val) const ;
-private:
-	const facility_vector root;
-	facility_vector tail;
-	std::vector<int> change_log{ std::vector<int>(0) };
-};
+const double EPSILON = 10e-7;
+typedef std::vector<int> range_vector;
 
 // Abbreviated Standard Algorithms - only commonly used ones
 // How are they abbreviated? Instead of passing container.begin() and container.end() we pass only a reference to the container.
@@ -71,27 +54,23 @@ namespace asa {
 	}
 }
 
-std::vector<int> range(int n);
-void filter(facility_vector& facilities, const facility_predicate& predicate);
+range_vector range(size_t n);
+range_vector range(int n);
+void filter(std::vector<bool>& container, const std::function<bool(int)>& predicate);
 
 void inverse(std::vector<int>& output, const std::vector<int>& input);
 
-bool no_facility_is_open(const facility_vector& solution);
+bool no_facility_is_open(const std::vector<bool>& container);
 
 bool are_same(double a, double b);
 bool are_same(const std::vector<double>& a, const std::vector<double>& b);
 bool are_same(const std::vector<int>& a, const std::vector<int>& b);
 bool are_same(const std::vector<std::vector<double>>& a, const std::vector<std::vector<double>>& b);
 
-int hamming_distance(const facility_vector& a, const facility_vector& b);
 // Returns ||v||_2
 double magnitude(const std::vector<double>& v);
 
 std::string primitive_list_to_string(const std::vector<bool>& container);
 std::string primitive_list_to_string(const std::vector<int>& container);
 std::string primitive_list_to_string(const std::vector<double>& container);
-
-void expect_solution(Algorithm* algo, const SSCFLSO& instance, const int time_limit, const facility_vector& expected_solution);
-
-#include "utility_impl.h"
 #endif

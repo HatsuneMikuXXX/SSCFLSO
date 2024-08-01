@@ -1,3 +1,4 @@
+/*
 #ifndef GREEDY_POP_H
 #define GREEDY_POP_H
 #include "../algorithmClass.h"
@@ -11,7 +12,7 @@
  * x = 1 if and only if the facility is the most preferred
  * Then, x linearly decreases.
  * The utility is thus: capacity_j / [ facility_cost_j + (sum_I adjusted distribution costs) ]
-*/
+
 class GreedyPop : public Algorithm {
 public:
 	void solve(const SSCFLSO& instance, facility_vector& current_best, const std::chrono::milliseconds& time_limit, const bool gurobi_afterwards);
@@ -20,3 +21,4 @@ private:
 	std::vector<std::pair<int, double>> utility(const SSCFLSO& instance, const facility_vector& no_unnecessary_facilities);
 };
 #endif
+*/

@@ -1,3 +1,4 @@
+/*
 #ifndef STINGY_UNIT_TEST_H
 #define STINGY_UNIT_TEST_H
 #include "stingy.h"
@@ -7,3 +8,4 @@ namespace StingyUnitTest{
 	void test1();
 }
 #endif
+*/

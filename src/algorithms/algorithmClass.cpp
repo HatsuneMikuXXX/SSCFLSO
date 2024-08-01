@@ -2,10 +2,12 @@
 
 Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& new_solution, Timer& timer, ReportResult& report) {
 	if (!timer.running_status()) {
+		std::cout << "Timer has not been started. Algorithm cannot update solution." << std::endl;
 		return Algorithm::TIMER_NOT_RUNNING;
 	}
 	timer.pause_timer();
 	if (!timer.in_time()) {
+		timer.proceed_with_timer();
 		return Algorithm::TIMEOUT;
 	}
 	Validator FLV(instance);
@@ -16,10 +18,11 @@ Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solu
 		report.evalResult(forTheReport, timer);
 		timer.proceed_with_timer();
 		current_best.sol = new_solution;
+		current_best.val = FLV.value();
 		return Algorithm::IMPROVED;
 	}
 	timer.proceed_with_timer();
-	return Algorithm::NOT_IMPROVED;
+	return Algorithm::NOT_IMPROVED;	
 }
 
 class myCallback : public GRBCallback {
@@ -30,47 +33,46 @@ public:
 	solution_and_value* current_best;
 	Timer* timer;
 	ReportResult* report;
-	myCallback(GRBVar* open, Validator& FLV, const int numFacilities, solution_and_value& current_best, Timer& timer, ReportResult& report) {
-		open = open;
-		FLV = &FLV;
-		numFacilities = numFacilities;
-		current_best = &current_best;
-		timer = &timer;
-		report = &report;
-		
-	}
+	bool& test;
+	myCallback(GRBVar* open, Validator& FLV, const int numFacilities, solution_and_value& current_best, Timer& timer, ReportResult& report, bool test) : 
+		open(open), 
+		FLV(&FLV),
+		numFacilities(numFacilities),
+		current_best(&current_best),
+		timer(&timer),
+		report(&report), test(test){}
 protected:
 	void callback() {
 		timer->pause_timer();
 		try {
 			if (where == GRB_CB_MIPSOL) {
 				facility_vector solution(numFacilities);
+				double* x = getSolution(open, numFacilities);
 				for (int j = 0; j < numFacilities; j++) {
-					solution[j] = bool(open[j].get(GRB_DoubleAttr_X));
+					solution[j] = x[j];
 				}
 
 				FLV->set_solution(solution);
-				if (FLV->feasible() && FLV->value() < current_best->val && timer->in_time()) {
+				if (FLV->feasible() && (FLV->value() < current_best->val || current_best->val == -1) && timer->in_time()) {
 					current_best->sol = solution;
 					current_best->val = FLV->value();
 					report->evalResult(*current_best, *timer);
 				}
-				std::cout << "Solution value: " << FLV->value() << std::endl;
 			}
 		}
 		catch (GRBException e) {
-			std::cout << "Error during callback." << std::endl;
+			std::cout << "Error during callback. " << std::endl;
 			std::cout << e.getMessage() << std::endl;
 		}
 		timer->proceed_with_timer();
 	}
 };
 
-std::vector<double> Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& initial, Timer& timer, ReportResult& report, bool continuous = false) const {
+std::vector<double> Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& instance, solution_and_value& current_best, const facility_vector& initial, Timer& timer, ReportResult& report, bool continuous) const {
 	const range_vector facility_range = range(instance.facilities);
 	const range_vector client_range = range(instance.clients);
-	const int m = facility_range.size();
-	const int n = client_range.size();
+	const int m = int(facility_range.size());
+	const int n = int(client_range.size());
 	try {
 		// Define the model
 		GRBEnv* env = new GRBEnv();
@@ -78,11 +80,11 @@ std::vector<double> Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& insta
 		GRBModel model = GRBModel(*env);
 		// Facility variables
 		GRBVar* open = (continuous) ? model.addVars(m, GRB_CONTINUOUS) : model.addVars(m, GRB_BINARY);
-		asa::for_each(facility_range, [&open, &instance](const int facility_id) {
+		asa::for_each(facility_range, [&open, &instance](const size_t facility_id) {
 			open[facility_id].set(GRB_DoubleAttr_Obj, instance.facility_costs[facility_id]);
 			});
 		// Distribution variables
-		GRBVar** distribution = new GRBVar * [instance.facilities];
+		GRBVar** distribution = new GRBVar* [instance.facilities];
 		asa::for_each(facility_range, [&distribution, &model, &n, &client_range, &instance, &continuous](const int facility_id) {
 			distribution[facility_id] = (continuous) ? model.addVars(n, GRB_CONTINUOUS) : model.addVars(n, GRB_BINARY);
 			asa::for_each(client_range, [&distribution, &instance, &facility_id](const int client_id) {
@@ -129,17 +131,20 @@ std::vector<double> Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& insta
 		asa::for_each(facility_range, [&open, &initial](const int facility_id) {open[facility_id].set(GRB_DoubleAttr_Start, initial[facility_id]); });
 
 		// Callback - Required for frequent updates
+		bool g = false;
+		Validator FLV = Validator(instance);
+		myCallback cb = myCallback(open, FLV, instance.facilities, current_best, timer, report, g);
 		if (!continuous) {
-			Validator FLV = Validator(instance);
-			myCallback cb = myCallback(open, FLV, instance.facilities, current_best, timer, report);
 			model.setCallback(&cb);
 		}
 		// Start solving
 		double remaining_time_limit_in_sec = timer.get_remaining_time() / 1000;
 		model.set(GRB_DoubleParam_TimeLimit, remaining_time_limit_in_sec);
 		model.optimize();
-
-		if (!continuous) { return std::vector<double>(0); }
+		if (!continuous) { 
+			// Callbacks should update the solution so the return value doesn't matter
+			return std::vector<double>();
+		}
 		std::vector<double> res(m);
 		for (int j = 0; j < m; j++) {
 			res[j] = open[j].get(GRB_DoubleAttr_X);
@@ -152,4 +157,5 @@ std::vector<double> Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& insta
 	catch (GRBException e) {
 		std::cerr << "Something went wrong:\n" << e.getMessage() << std::endl;
 	}
+	return std::vector<double>();
 }
