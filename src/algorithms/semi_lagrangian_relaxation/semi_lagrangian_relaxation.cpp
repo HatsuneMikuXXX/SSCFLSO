@@ -3,7 +3,8 @@
 SemiLagrangianRelaxation::SemiLagrangianRelaxation(bool homogenous_weight_update) : homogenous_weight_update(homogenous_weight_update){}
 
 std::string SemiLagrangianRelaxation::name() const {
-	return "Semi-Lagrangian Relaxation";
+	
+	return (homogenous_weight_update) ? "Semi-Lagrangian Relaxation homogenous_weights" : "Semi-Lagrangian Relaxation ";
 }
 
 bool SemiLagrangianRelaxation::post_applyable() const {

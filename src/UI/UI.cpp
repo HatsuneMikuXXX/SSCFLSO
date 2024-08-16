@@ -50,7 +50,11 @@ void start_UI(int argc, char* argv[]) {
         case RUN_FLAG:
             runFlags++;
             if (runFlags >= 2) {
-                std::cout << "Please use at most one -run flag. Ignoring this and further -run commands; considering only the first one.";
+                std::cout << "Please use at most one -run flag. Ignoring this and further -run commands; considering only the first one." << std::endl;
+            }
+            if (i + 4 >= argc) {
+                std::cout << "Too few parameters to run the command" << std::endl;
+                return;
             }
             break;
         case INPUT_FILE_PATH:
@@ -82,6 +86,32 @@ void start_UI(int argc, char* argv[]) {
         case NO_TOKEN:
             break;
         case GRASP_ALGO:
+            // Special case because it involves a numeric parameter
+            if (i + 1 >= argc) {
+                std::cout << "No parameter given for GRASP algo. Skipping over." << std::endl;
+                algoObjects[algoObjectsSize++] = NULL;
+            }
+            if (token_string[++i] == TYPE_DOUBLE_VALUE) {
+                try {
+                    double RCL_percentile = std::stod(argv[i]);
+                    if (RCL_percentile < 0) {
+                        RCL_percentile = 0;
+                    }
+                    else if (RCL_percentile > 1) {
+                        RCL_percentile = 1;
+                    }
+                    std::cout << "GRASP algorithm recognized" << std::endl;
+                    algoObjects[algoObjectsSize++] = new GRASP(RCL_percentile);
+                }
+                catch (std::invalid_argument e) {
+                    std::cout << "Numeric parameter for GRASP not recognized." << std::endl;
+                }
+            }
+            else {
+                algoObjects[algoObjectsSize++] = NULL;
+                std::cout << "GRASP parameters not recognized" << std::endl;
+            }
+            break;
         case GREEDY_ALGO:
         case GUROBI_ALGO:
         case LAGRANGIAN_RELAXATION_ALGO:
@@ -93,6 +123,7 @@ void start_UI(int argc, char* argv[]) {
         case LOCAL_SEARCH_ALGO:
         case COMPOSITE_ALGO:
             algoObjects[algoObjectsSize++] = algorithmFactory(token_string, i, argc);
+            break;
         default:
             break;
         }
@@ -102,101 +133,82 @@ void start_UI(int argc, char* argv[]) {
         execute_run_command(inputSourceIsDirectory, inputSource, outputTarget, timelimit, algoObjects, algoObjectsSize, runAlgoWithGurobi);
     }
 }
-/*
-  if (i++ >= argc) {
-                std::cout << "No parameter given for simulated annealing. Exiting.";
-                return;
-            }
-            switch (token_string[i]) {
-            case SOLBY_GIVEN_PARAM:
-                algoObjects[algoObjectsSize] = new SimulatedAnnealing(SimulatedAnnealing::GIVEN);
-                break;
-            case SOLBY_PREPROCESS_PARAM:
-                algoObjects[algoObjectsSize] = new SimulatedAnnealing(SimulatedAnnealing::PREPROCESS);
-                break;
-            case SOLBY_RANDOM_PARAM:
-                algoObjects[algoObjectsSize] = new SimulatedAnnealing(SimulatedAnnealing::RANDOM);
-                break;
-            case SOLBY_RANDOM_RESTART_PARAM:
-                algoObjects[algoObjectsSize] = new SimulatedAnnealing(SimulatedAnnealing::RANDOM_RESTART);
-                break;
-            }
-            algoObjectsSize++;
-
-              if (i++ >= argc) {
-                std::cout << "No parameter given for simulated annealing. Exiting.";
-                return;
-            }
-            switch (token_string[i]) {
-            case SOLBY_GIVEN_PARAM:
-                algoObjects[algoObjectsSize] = new TabuSearch(TabuSearch::GIVEN);
-                break;
-            case SOLBY_PREPROCESS_PARAM:
-                algoObjects[algoObjectsSize] = new TabuSearch(TabuSearch::PREPROCESS);
-                break;
-            case SOLBY_RANDOM_PARAM:
-                algoObjects[algoObjectsSize] = new TabuSearch(TabuSearch::RANDOM);
-                break;
-            case SOLBY_RANDOM_RESTART_PARAM:
-                algoObjects[algoObjectsSize] = new TabuSearch(TabuSearch::RANDOM_RESTART);
-                break;
-            }
-            algoObjectsSize++;
-*/
 
 Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_index) {
 	switch (token_string[current_index]) {
-    case GRASP_ALGO:
-        return new GRASP();
     case GREEDY_ALGO:
+        std::cout << "Greedy algorithm recognized." << std::endl;
         return new Greedy();
     case GUROBI_ALGO:
+        std::cout << "Gurobi algorithm recognized." << std::endl;
         return new Gurobi();
     case LAGRANGIAN_RELAXATION_ALGO:
+        std::cout << "LR algorithm recognized." << std::endl;
         return new LagrangianRelaxation();
     case PREPROCESS_ALGO:
+        std::cout << "Preprocess algorithm recognized." << std::endl;
         return new Preprocess();
     case ROUNDING_ALGO:
+        std::cout << "Rounding algorithm recognized." << std::endl;
         return new Rounding();
     case SEMI_LAGRANGIAN_RELAXATION_ALGO:
-        return new SemiLagrangianRelaxation(true);
-    case SIMULATED_ANNEALING_ALGO:
         if (current_index + 1 >= max_index) {
-            std::cout << "No parameter given for simulated annealing. Skipping over.";
+            std::cout << "No parameter given for semi lagrangian relaxation. Skipping over." << std::endl;
             return NULL;
         }
-        switch (token_string[current_index++]) {
+        switch (token_string[++current_index]) {
+        case TYPE_BOOLEAN_TRUE:
+            std::cout << "SLR with homogeneous weights algorithm recognized." << std::endl;
+            return new SemiLagrangianRelaxation(true);
+        case TYPE_BOOLEAN_FALSE:
+            std::cout << "SLR algorithm recognized." << std::endl;
+            return new SemiLagrangianRelaxation(false);
+        }
+    case SIMULATED_ANNEALING_ALGO:
+        if (current_index + 1 >= max_index) {
+            std::cout << "No parameter given for simulated annealing. Skipping over." << std::endl;
+            return NULL;
+        }
+        switch (token_string[++current_index]) {
         case SOLBY_GIVEN_PARAM:
+            std::cout << "Simulated annealing algorithm recognized." << std::endl;
            return new SimulatedAnnealing(SimulatedAnnealing::GIVEN);
         case SOLBY_PREPROCESS_PARAM:
+            std::cout << "Simulated annealing with preprocessing algorithm recognized." << std::endl;
             return new SimulatedAnnealing(SimulatedAnnealing::PREPROCESS);
         case SOLBY_RANDOM_PARAM:
+            std::cout << "Simulated annealing with randomization + seeking feasible solution algorithm recognized." << std::endl;
             return new SimulatedAnnealing(SimulatedAnnealing::RANDOM);
         case SOLBY_RANDOM_RESTART_PARAM:
+            std::cout << "Simulated annealing with randomization algorithm recognized." << std::endl;
             return new SimulatedAnnealing(SimulatedAnnealing::RANDOM_RESTART);
         }
     case TABU_SEARCH_ALGO:
         if (current_index + 1 >= max_index) {
-            std::cout << "No parameter given for tabu search. Skipping over.";
+            std::cout << "No parameter given for tabu search. Skipping over." << std::endl;
             return NULL;
         }
-        switch (token_string[current_index++]) {
+        switch (token_string[++current_index]) {
         case SOLBY_GIVEN_PARAM:
+            std::cout << "Tabu search algorithm recognized." << std::endl;
             return new TabuSearch(TabuSearch::GIVEN);
         case SOLBY_PREPROCESS_PARAM:
+            std::cout << "Tabu search with preprocessing algorithm recognized." << std::endl;
             return new TabuSearch(TabuSearch::PREPROCESS);
         case SOLBY_RANDOM_PARAM:
+            std::cout << "Tabu search with randomization + seeking feasible solution algorithm recognized." << std::endl;
             return new TabuSearch(TabuSearch::RANDOM);
         case SOLBY_RANDOM_RESTART_PARAM:
+            std::cout << "Tabu search with randomization algorithm recognized." << std::endl;
             return new TabuSearch(TabuSearch::RANDOM_RESTART);
         }
     case LOCAL_SEARCH_ALGO: {
         if (current_index + 2 >= max_index) {
-            std::cout << "Not enough parameter given for local search. Skipping over.";
+            std::cout << "Not enough parameter given for local search. Skipping over." << std::endl;
             return NULL;
         }
-        TOKEN t1 = token_string[current_index++];
-        TOKEN t2 = token_string[current_index++];
+        TOKEN t1 = token_string[++current_index];
+        TOKEN t2 = token_string[++current_index];
         if (t1 != NEXTNEIGHBOR_BEST_PARAM && t1 != NEXTNEIGHBOR_FIRST_PARAM) {
             TOKEN tmp = t1;
             t1 = t2;
@@ -206,29 +218,38 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
         case NEXTNEIGHBOR_BEST_PARAM:
             switch (t2) {
             case SOLBY_GIVEN_PARAM:
+                std::cout << "Local search (best neighbor) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::GIVEN, LocalSearch::BEST);
             case SOLBY_PREPROCESS_PARAM:
+                std::cout << "Local search (best neighbor, preprocessing) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::PREPROCESS, LocalSearch::BEST);
             case SOLBY_RANDOM_PARAM:
+                std::cout << "Local search (best neighbor, randomization + seek) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::RANDOM, LocalSearch::BEST);
             case SOLBY_RANDOM_RESTART_PARAM:
+                std::cout << "Local search (best neighbor, randomization) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::RANDOM_RESTART, LocalSearch::BEST);
             }
         case NEXTNEIGHBOR_FIRST_PARAM:
             switch (t2) {
             case SOLBY_GIVEN_PARAM:
+                std::cout << "Local search (first feasible neighbor) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::GIVEN, LocalSearch::FIRST);
             case SOLBY_PREPROCESS_PARAM:
+                std::cout << "Local search (first feasible neighbor, preprocess) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::PREPROCESS, LocalSearch::FIRST);
             case SOLBY_RANDOM_PARAM:
+                std::cout << "Local search (first feasible neighbor, randomization + seek) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::RANDOM, LocalSearch::FIRST);
             case SOLBY_RANDOM_RESTART_PARAM:
+                std::cout << "Local search (first feasible neighbor, randomization) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::RANDOM_RESTART, LocalSearch::FIRST);
             }
         }
     }
        
     case COMPOSITE_ALGO: {
+        int number_of_algos = 0;
         std::vector<Algorithm*> algorithms(0);
         std::function<bool(TOKEN)> part_of_composition([](const TOKEN token) -> bool {
             // Either algo (not composition) or param
@@ -239,12 +260,15 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
             return (token != COMPOSITE_ALGO) && (b1 || b2 || b3);
             });
         while (current_index + 1 < max_index && part_of_composition(token_string[++current_index])) {
+            number_of_algos++;
             algorithms.push_back(algorithmFactory(token_string, current_index, max_index));
         }
+        std::cout << "Composition algorithm with " << number_of_algos << " algorithms recognized." << std::endl;
         return new Composite(algorithms);
     }
         
 	default:
+        std::cout << "Algorithm not recognized." << std::endl;
         return NULL;
 	}
 }
@@ -252,7 +276,6 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
 TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
     std::string input(argument);
     asa::transform(input, [](unsigned char c) -> char { return std::tolower(c); }); // To lower case
-
 
     std::function<TOKEN()> find_flag_token([&input]() -> TOKEN {
         auto it = std::find_if(std::begin(valid_flags), std::end(valid_flags), [&input](const std::string& c) -> bool { return input == "-" + c || input == "--" + c; });
@@ -329,13 +352,11 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
             token = find_algo_token();
             stack.push_back(token);
             return token;
-        case GRASP_ALGO:
         case GREEDY_ALGO:
         case GUROBI_ALGO:
         case LAGRANGIAN_RELAXATION_ALGO:
         case PREPROCESS_ALGO:
         case ROUNDING_ALGO:
-        case SEMI_LAGRANGIAN_RELAXATION_ALGO:
             // Expect another Algorithm or flag
             stack.clear();
             {
@@ -354,6 +375,33 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
                     stack.push_back(RUN_FLAG);
                 }
                 return token;
+            }
+            return INVALID;
+        case SEMI_LAGRANGIAN_RELAXATION_ALGO:
+            // Expect true or false
+            stack.clear();
+            if (input == "true" || input == "1") {
+                // Place any Algo Token without parameters because we have now seen all params
+                stack.push_back(PREPROCESS_ALGO);
+                return TYPE_BOOLEAN_TRUE;
+            }
+            else if (input == "false" || input == "0") {
+                // Place any Algo Token without parameters because we have now seen all params
+                stack.push_back(PREPROCESS_ALGO);
+                return TYPE_BOOLEAN_FALSE;
+            }
+            return INVALID;
+        case GRASP_ALGO:
+            // Expect a value in [0,1]
+            stack.clear();
+            try {
+                double dontcare = std::stod(input);
+                // Place any Algo Token without parameters because we have now seen all params
+                stack.push_back(PREPROCESS_ALGO);
+                return TYPE_DOUBLE_VALUE;
+            }
+            catch (std::invalid_argument e) {
+                return INVALID;
             }
             return INVALID;
         case SIMULATED_ANNEALING_ALGO:
@@ -393,17 +441,19 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
     case 2:
         switch (stack[0]) {
         case LOCAL_SEARCH_ALGO:
-            stack.clear();
             if (stack[1] == NEXTNEIGHBOR_FIRST_PARAM || stack[1] == NEXTNEIGHBOR_BEST_PARAM) {
                 // Expect init parameter
                 token = find_init_param_token();
+                stack.clear();
                 // Place any Algo Token without parameters because we have now seen all params
+                
                 stack.push_back(PREPROCESS_ALGO);
                 return token;
             }
             else {
                 // Expect next parameter
                 token = find_next_param_token();
+                stack.clear();
                 // Place any Algo Token without parameters because we have now seen all params
                 stack.push_back(PREPROCESS_ALGO);
                 return token;
@@ -519,18 +569,19 @@ void execute_run_command(
         if ((dir = opendir(inputSource.c_str())) != NULL) {
             while ((ent = readdir(dir)) != NULL) {
                 const std::string filename = ent->d_name;
+                // Scan all .plc files and ignore the rest
                 if (filename.length() <= 4) { continue; }
                 if (filename.compare(filename.length() - 4, 4, ".plc") != 0) { continue; }
                 try {
                     const SSCFLSO instance = Generator::load_instance(inputSource + "/" + filename, true);
                     for (int i = 0; i < algoObjectsSize; i++) {
                         if (algoObjects[i] != NULL) {
-                            run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
+                            run(instance, filename, outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
                         }
                     }
                 }
                 catch (std::runtime_error e) {
-                    std::cout << "Instance has wrong format" << std::endl;
+                    std::cout << "Instance has wrong format or couldn't be found." << std::endl;
                 }
             }
             closedir(dir);
@@ -550,13 +601,13 @@ void execute_run_command(
             }
             for (int i = 0; i < algoObjectsSize; i++) {
                 if (algoObjects[i] != NULL) {
-                    run(instance, filename + "_" + algoObjects[i]->name(), outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
+                    run(instance, filename, outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
                 }
             }
 
         }
         catch (std::runtime_error e) {
-            std::cout << "Instance has wrong format" << std::endl;
+            std::cout << "Instance has wrong format or couldn't be found." << std::endl;
         }
     }
 }

@@ -2,10 +2,12 @@
 
 GRASP::GRASP() {}
 
+GRASP::GRASP(double RCL_percentile) : RCL_percentile(RCL_percentile) {};
+
 GRASP::GRASP(int maxIter, double RCL_percentile) : maxIter(maxIter), RCL_percentile(RCL_percentile) {}
 
 std::string GRASP::name() const {
-	return "GRASP";
+	return "GRASP RCL percentile " + std::to_string(RCL_percentile);
 };
 
 bool GRASP::post_applyable() const {

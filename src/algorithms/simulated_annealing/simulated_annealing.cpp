@@ -3,7 +3,25 @@
 SimulatedAnnealing::SimulatedAnnealing(const INITIAL_SOLUTION init) : init(init) {}
 
 std::string SimulatedAnnealing::name() const {
-	return "Simulated Annealing";
+	std::string id = "Simulated Annealing ";
+	switch (init) {
+	case PREPROCESS:
+		id += "Preprocess";
+		break;
+	case RANDOM_RESTART:
+		id += "Random Restart";
+		break;
+	case RANDOM:
+		id += "Random";
+		break;
+	case GIVEN:
+		id += "Given";
+		break;
+	default:
+		throw std::runtime_error("Initial solution code is non-existent!");
+		break;
+	}
+	return id;
 }
 
 bool SimulatedAnnealing::post_applyable() const {

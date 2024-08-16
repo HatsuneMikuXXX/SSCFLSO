@@ -8,6 +8,7 @@
 class GRASP : public Algorithm {
 public:
 	GRASP();
+	GRASP(double RCL_percentile);
 	GRASP(int maxIter, double RCL_percentile);
 	void solve(const SSCFLSO& instance, solution_and_value& current_best, Timer& timer, ReportResult& report, const bool gurobi_afterwards) const;
 	std::string name() const;

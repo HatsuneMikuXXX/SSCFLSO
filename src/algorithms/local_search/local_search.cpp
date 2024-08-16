@@ -7,7 +7,7 @@ LocalSearch::LocalSearch(INITIAL_SOLUTION init) : init(init) {}
 LocalSearch::LocalSearch(INITIAL_SOLUTION init, NEXT_NEIGHBOR next) : init(init), next(next) {}
 
 std::string LocalSearch::name() const {
-	std::string id = "Local Search: ";
+	std::string id = "Local Search ";
 	switch (init) {
 	case PREPROCESS:
 		id += "Preprocess";

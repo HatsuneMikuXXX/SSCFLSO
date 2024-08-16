@@ -38,10 +38,18 @@ void ReportResult::finishUp(const std::string& save_to_path) {
 	Validator FLV = Validator(instance);
 	FLV.set_solution(LastSolution.sol);
 	LastSolutionFeasible = FLV.feasible();
-	// Write result
-	std::ofstream out(save_to_path);
+	// Time stamp
+	std::time_t tmp = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	std::string time(std::ctime(&tmp));
+	time.erase(time.end() - 1, time.end()); // Remove line break
+	std::replace(time.begin(), time.end(), ':', '-');
+	std::replace(time.begin(), time.end(), ' ', '_');
+	// Write results
+	std::string instance_name_without_end = instance_name;
+	instance_name_without_end.erase(instance_name_without_end.find(".plc"), 4);
+	std::ofstream out(save_to_path + "/" + instance_name_without_end + "_" + algorithm_name + "_" + time + ".json");
 	out << "{\"Instance ID\" : \"" << instance_name << "\", ";
-	out << "\"Time limit\" : \"" << timelimit << "\", ";
+	out << "\"Time limit (ms)\" : \"" << timelimit << "\", ";
 	out << "\"Algorithm\" : \"" << algorithm_name << "\", ";
 	out << "\"Gurobi Postprocessing\" : \"" << gurobi_postprocessing << "\", ";
 	out << "\"Feasible\" : " << LastSolutionFeasible << ", ";

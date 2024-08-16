@@ -4,7 +4,8 @@ void run(const SSCFLSO& instance, const std::string& instance_name, const std::s
 	solution_and_value SV{ facility_vector(instance.facilities, 0) , -1};
 	Validator FLV(instance);
 	Timer timer(timelimit_in_milliseconds);
-	ReportResult report(instance, instance_name, timelimit_in_milliseconds, algo_ptr->name(), gurobi_afterwards);
+	const std::string algo_name = algo_ptr->name();
+	ReportResult report(instance, instance_name, timelimit_in_milliseconds, algo_name, gurobi_afterwards);
 	timer.start_timer();
 	try {
 		algo_ptr->solve(instance, SV, timer, report, gurobi_afterwards);

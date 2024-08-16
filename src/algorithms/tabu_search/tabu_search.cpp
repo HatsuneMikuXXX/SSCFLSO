@@ -3,7 +3,25 @@
 TabuSearch::TabuSearch(INITIAL_SOLUTION init) : init(init) {}
 
 std::string TabuSearch::name() const {
-	return "Tabu Search";
+	std::string id = "Tabu search ";
+	switch (init) {
+	case PREPROCESS:
+		id += "Preprocess";
+		break;
+	case RANDOM_RESTART:
+		id += "Random Restart";
+		break;
+	case RANDOM:
+		id += "Random";
+		break;
+	case GIVEN:
+		id += "Given";
+		break;
+	default:
+		throw std::runtime_error("Initial solution code is non-existent!");
+		break;
+	}
+	return id;
 }
 
 bool TabuSearch::post_applyable() const {
