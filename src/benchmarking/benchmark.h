@@ -1,12 +1,12 @@
 #ifndef BENCHMARK_H
 #define BENCHMARK_H
-#include "../SSCFLSO/SSCFLSO_validator.h"
-#include "../SSCFLSO/SSCFLSO_generator.h"
+#include "../SSCFLSO_model/SSCFLSO_validator.h"
+#include "../SSCFLSO_model/SSCFLSO_generator.h"
 #include "../common.h"
 #include "../helpers/timer.h"
 #include "../tracking/report_result.h"
 #include "../algorithms/algorithmClass.h"
-#include "../SSCFLSO/SSCFLSO_validator.h"
+#include "../SSCFLSO_model/SSCFLSO_validator.h"
 
 void run(const SSCFLSO& instance, const std::string& instance_name, const std::string& save_to_path, int timelimit_in_milliseconds, Algorithm* const algo_ptr, const bool gurobi_afterwards);
 

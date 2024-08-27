@@ -2,8 +2,8 @@
 #define LIBRARIES_H
 
 // Model
-#include "SSCFLSO/SSCFLSO_generator.h"
-#include "SSCFLSO/SSCFLSO_validator.h"
+#include "SSCFLSO_model/SSCFLSO_generator.h"
+#include "SSCFLSO_model/SSCFLSO_validator.h"
 
 // Algorithms
 #include "algorithms/algorithmClass.h"
@@ -21,7 +21,7 @@
 
 
 // Unit Tests
-#include "SSCFLSO/SSCFLSO_unit_test.h"
+#include "SSCFLSO_model/SSCFLSO_unit_test.h"
 #include "algorithms/algorithm_unit_test.h"
 #include "algorithms/greedy/greedy_unit_test.h"
 #include "algorithms/rounding/rounding_unit_test.h"

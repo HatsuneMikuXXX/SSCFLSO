@@ -1,0 +1,1 @@
+target_sources(SSCFLSO PUBLIC report_result.cpp report_result.h)

@@ -1,5 +1,6 @@
 #ifndef GRASP_H
 #define GRASP_H
+#include <climits>
 #include "../algorithmClass.h"
 #include "../Preprocess/preprocess.h"
 #include "../../helpers/random.h"

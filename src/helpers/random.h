@@ -3,7 +3,7 @@
 #include <math.h> 
 #include <stdexcept> 
 // Return a random value from [0, 1]
-double random();
+double unit_interval_random();
 // Return a uniformly-drawn, random value from {0, 1}
 bool flip();
 // Return '1' with a probability p and '0' with a probability 1 - p

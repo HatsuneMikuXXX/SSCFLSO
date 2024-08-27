@@ -19,6 +19,4 @@ void start_unit_testing(int argc) {
 	SimulatedAnnealingUnitTest::run_tests();
 	GurobiUnitTest::run_tests();
 	LagrangianRelaxationUnitTest::run_tests();
-
-
 }

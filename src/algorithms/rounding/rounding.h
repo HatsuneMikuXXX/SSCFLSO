@@ -1,7 +1,7 @@
 #ifndef ROUNDING_H
 #define ROUNDING_H
 #include "../algorithmClass.h"
-#include "../../SSCFLSO/SSCFLSO_generator.h"
+#include "../../SSCFLSO_model/SSCFLSO_generator.h"
 #include "../Preprocess/preprocess.h"
 class Rounding : public Algorithm {
 public:

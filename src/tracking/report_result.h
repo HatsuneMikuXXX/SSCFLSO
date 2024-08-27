@@ -1,6 +1,6 @@
 #ifndef REPORT_H
 #define REPORT_H
-#include "../SSCFLSO/SSCFLSO_validator.h"
+#include "../SSCFLSO_model/SSCFLSO_validator.h"
 #include "../helpers/timer.h"
 #include <fstream> 
 

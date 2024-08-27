@@ -11,4 +11,6 @@
 #include <math.h> 
 #include <algorithm>
 #include <numeric>
+// assert
+#include <cassert>
 #endif

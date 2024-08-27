@@ -1,7 +1,7 @@
 #ifndef SSCFLSO_GUROBI_H
 #define SSCFLSO_GUROBI_H
 #include "../algorithmClass.h"
-#include "../../SSCFLSO/SSCFLSO_generator.h"
+#include "../../SSCFLSO_model/SSCFLSO_generator.h"
 
 class Gurobi : public Algorithm {
 public:

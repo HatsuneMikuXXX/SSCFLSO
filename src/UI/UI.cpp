@@ -17,7 +17,25 @@ void start_UI(int argc, char* argv[]) {
     for (int i = 1; i < argc; i++) {
         token_string[i] = scan_arg(stack, argv[i]);
         if (token_string[i] == INVALID) {
-            std::cout << invalid_msg << std::endl;
+            std::cout << std::to_string(i);
+            switch (i) {
+            case 1:
+            case 21:
+            case 31:
+                std::cout << "st "; break;
+            case 2:
+            case 22:
+            case 32:
+                std::cout << "nd "; break;
+            case 3:
+            case 23:
+            case 33:
+                std::cout << "rd "; break;
+            default:
+                std::cout << "th "; break;
+            }
+            std::cout << "argument \"" << argv[i] << "\" is invalid or caused issues.";
+            std::cout << invalid_msg;
             return;
         }
     }
@@ -164,6 +182,7 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
             std::cout << "SLR algorithm recognized." << std::endl;
             return new SemiLagrangianRelaxation(false);
         }
+        break;
     case SIMULATED_ANNEALING_ALGO:
         if (current_index + 1 >= max_index) {
             std::cout << "No parameter given for simulated annealing. Skipping over." << std::endl;
@@ -183,6 +202,7 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
             std::cout << "Simulated annealing with randomization algorithm recognized." << std::endl;
             return new SimulatedAnnealing(SimulatedAnnealing::RANDOM_RESTART);
         }
+        break;
     case TABU_SEARCH_ALGO:
         if (current_index + 1 >= max_index) {
             std::cout << "No parameter given for tabu search. Skipping over." << std::endl;
@@ -202,6 +222,7 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
             std::cout << "Tabu search with randomization algorithm recognized." << std::endl;
             return new TabuSearch(TabuSearch::RANDOM_RESTART);
         }
+        break;
     case LOCAL_SEARCH_ALGO: {
         if (current_index + 2 >= max_index) {
             std::cout << "Not enough parameter given for local search. Skipping over." << std::endl;
@@ -230,6 +251,7 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
                 std::cout << "Local search (best neighbor, randomization) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::RANDOM_RESTART, LocalSearch::BEST);
             }
+            break;
         case NEXTNEIGHBOR_FIRST_PARAM:
             switch (t2) {
             case SOLBY_GIVEN_PARAM:
@@ -245,9 +267,10 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
                 std::cout << "Local search (first feasible neighbor, randomization) algorithm recognized." << std::endl;
                 return new LocalSearch(LocalSearch::RANDOM_RESTART, LocalSearch::FIRST);
             }
+            break;
         }
+        break;
     }
-       
     case COMPOSITE_ALGO: {
         int number_of_algos = 0;
         std::vector<Algorithm*> algorithms(0);
@@ -561,33 +584,52 @@ void execute_run_command(
     Algorithm* const algoObjects[number_of_algos],
     const int algoObjectsSize,
     const bool runAlgoWithGurobi) {
-    // Check if multiple sources are available
-    if (inputSourceIsDirectory) {
-        DIR* dir; // Directory
-        struct dirent* ent; // Read entries in directory 
 
-        if ((dir = opendir(inputSource.c_str())) != NULL) {
-            while ((ent = readdir(dir)) != NULL) {
-                const std::string filename = ent->d_name;
-                // Scan all .plc files and ignore the rest
-                if (filename.length() <= 4) { continue; }
-                if (filename.compare(filename.length() - 4, 4, ".plc") != 0) { continue; }
-                try {
-                    const SSCFLSO instance = Generator::load_instance(inputSource + "/" + filename, true);
-                    for (int i = 0; i < algoObjectsSize; i++) {
-                        if (algoObjects[i] != NULL) {
-                            run(instance, filename, outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
+    // C++ 17
+    if (inputSourceIsDirectory) {
+        // Determine total number of files
+        double tot = 0;
+        for (const auto& entry : std::filesystem::directory_iterator(inputSource)) {
+            std::string filename = entry.path().string();
+            std::replace(filename.begin(), filename.end(), '\\', '/');
+            while (filename.find("/") != std::string::npos) {
+                filename = filename.substr(filename.find("/") + 1);
+            }
+            if (filename.length() <= 4) { continue; }
+            if (filename.compare(filename.length() - 4, 4, ".plc") != 0) { continue; }
+            tot++;
+        }
+
+        // Actual Execution
+        double cnt = 0;
+        for (const auto& entry : std::filesystem::directory_iterator(inputSource)) {
+            std::string filename = entry.path().string();
+            std::replace(filename.begin(), filename.end(), '\\', '/');
+            while (filename.find("/") != std::string::npos) {
+                filename = filename.substr(filename.find("/") + 1);
+            }
+            // Scan all .plc files and ignore the rest
+            if (filename.length() <= 4) { continue; }
+            if (filename.compare(filename.length() - 4, 4, ".plc") != 0) { continue; }
+            try {
+                const SSCFLSO instance = Generator::load_instance(inputSource + "/" + filename, true);
+                for (int i = 0; i < algoObjectsSize; i++) {
+                    if (algoObjects[i] != NULL) {
+                        double val = 100 * (++cnt) / (tot);
+                        val = std::ceil(val * 100.0) / 100.0;
+                        std::cout << "Progress: " << val << "% (" << cnt << "/" << tot << ").";
+                        std::cout << " Running " << algoObjects[i]->name();
+                        if (runAlgoWithGurobi) {
+                            std::cout << " + Gurobi";
                         }
+                        std::cout << " on " << filename << std::endl;
+                        run(instance, filename, outputTarget, timelimit, algoObjects[i], runAlgoWithGurobi);
                     }
                 }
-                catch (std::runtime_error e) {
-                    std::cout << "Instance has wrong format or couldn't be found." << std::endl;
-                }
             }
-            closedir(dir);
-        }
-        else {
-            std::cout << "Could not open directory" << std::endl;
+            catch (std::runtime_error e) {
+                std::cout << "The file " << filename << " has wrong format or couldn't be found." << std::endl;
+            }
         }
     }
     else {

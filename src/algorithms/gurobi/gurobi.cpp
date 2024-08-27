@@ -2,7 +2,7 @@
 
 
 std::string Gurobi::name() const {
-	return "Gurobi ";
+	return "Gurobi";
 }
 
 bool Gurobi::post_applyable() const {

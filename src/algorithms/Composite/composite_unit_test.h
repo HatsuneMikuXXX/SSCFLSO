@@ -4,7 +4,7 @@
 #include "../unit_test_utility.h"
 #include "../Preprocess/preprocess.h"
 #include "../local_search/local_search.h"
-#include "../../SSCFLSO/SSCFLSO_generator.h"
+#include "../../SSCFLSO_model/SSCFLSO_generator.h"
 
 namespace CompositeUnitTest {
 	bool run_tests();

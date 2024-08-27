@@ -8,5 +8,7 @@ build
 *.sln
 *.vcxproj*
 x64/
-dirent/
+debug.lp
+CMakeCache.txt
 CppProperties.json
+results/test/

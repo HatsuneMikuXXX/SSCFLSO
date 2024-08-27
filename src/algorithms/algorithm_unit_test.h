@@ -1,7 +1,7 @@
 #ifndef ALGORITHM_UNIT_TEST_H
 #define ALGORITHM_UNIT_TEST_H
 #include "algorithmClass.h"
-#include "../SSCFLSO/SSCFLSO_generator.h"
+#include "../SSCFLSO_model/SSCFLSO_generator.h"
 #include <cassert>
 
 namespace AlgorithmUnitTest{

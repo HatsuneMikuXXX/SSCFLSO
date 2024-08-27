@@ -1,15 +1,15 @@
 #include "random.h"
 
-double random(){
+double unit_interval_random(){
 	return double(rand())/RAND_MAX;
 }
 
 bool flip() {
-	return random() > 0.5;
+	return unit_interval_random() > 0.5;
 }
 
 bool biased_flip(const double p) {
-	return random() < p;
+	return unit_interval_random() < p;
 }
 
 double uniform(const double lower_bound, const double upper_bound, const bool integer){
@@ -17,11 +17,11 @@ double uniform(const double lower_bound, const double upper_bound, const bool in
 		return lower_bound;
 	}
 	if (!integer) {
-		const double r = random();
+		const double r = unit_interval_random();
 		return r * lower_bound + (1. - r) * upper_bound;
 	}
 	else {
-		const double r = random();
+		const double r = unit_interval_random();
 		const int new_lb = int(ceil(lower_bound));
 		const int new_ub = int(floor(upper_bound)) + 1; //We round down afterwards.
 		const double floating_point_sample = r * new_lb + (1. - r) * new_ub;

@@ -96,7 +96,7 @@ void SimulatedAnnealing::solve(const SSCFLSO& instance, solution_and_value& curr
 	int max_hamming_distance = 2;
 	double alpha = 0.7;
 	int inner_iterations = int(instance.facilities) + int(0.5 * (instance.facilities * instance.facilities - instance.facilities));
-	inner_iterations *= alpha;
+	inner_iterations = int(alpha * inner_iterations);
 	facility_vector neighbor;
 	FLV.set_solution(solution);
 	double current_solution_value = FLV.value();
@@ -117,7 +117,7 @@ void SimulatedAnnealing::solve(const SSCFLSO& instance, solution_and_value& curr
 				}
 			}
 			else {
-				bool accept = random() < exp((current_solution_value - FLV.value())/current_temperature); //Enumerator is non-positive => exp in (0, 1] 
+				bool accept = unit_interval_random() < exp((current_solution_value - FLV.value())/current_temperature); //Enumerator is non-positive => exp in (0, 1] 
 				if (accept) {
 					solution = neighbor;
 					current_solution_value = FLV.value();

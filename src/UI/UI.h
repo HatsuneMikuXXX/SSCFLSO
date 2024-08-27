@@ -2,16 +2,18 @@
 #define UI_H
 
 #include "../common.h"
-#include "../libraries.h"
+#include "../headers.h"
 #include "../benchmarking/benchmark.h"
-#include "../../third party libraries/dirent/include/dirent.h"
 // Messages
 #include "helpMessage.h"
 #include "invalidCommandMessage.h"
 #include "showAlgos.h"
 #include "showFormat.h"
+// Reading files in a directory
+#include <filesystem>
+#include <sys/stat.h>
 
-const enum TOKEN {
+enum TOKEN {
 	NO_TOKEN,
 	INVALID,
 

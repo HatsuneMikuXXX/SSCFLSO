@@ -12,7 +12,7 @@ void Validator::set_solution(const facility_vector& input_solution){
 	infeasible_solution_rating_already_computed = false;
 	{
 		// Solution vector must be binary
-		assert((solution.size() == ref_instance.facilities), "Solution length is incorrect");
+		assert(((solution.size() == ref_instance.facilities), "Solution length is incorrect"));
 		assert(asa::all_of(solution, [](const int b) -> bool { return b == 0 || b == 1; }));
 	}
 	solution = input_solution;
