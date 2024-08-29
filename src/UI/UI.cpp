@@ -294,6 +294,7 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
         std::cout << "Algorithm not recognized." << std::endl;
         return NULL;
 	}
+    return NULL;
 }
 
 TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
