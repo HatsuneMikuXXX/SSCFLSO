@@ -2,7 +2,7 @@
 #define TABU_SEARCH_H
 #include "../algorithmClass.h"
 #include "../local_search/local_search.h"
-#include "../Preprocess/preprocess.h"
+#include "../preprocess/preprocess.h"
 
 class TabuSearch : public Algorithm {
 public:

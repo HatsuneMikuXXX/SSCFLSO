@@ -7,7 +7,7 @@
 
 // Algorithms
 #include "algorithms/algorithmClass.h"
-#include "algorithms/Composite/composite.h"
+#include "algorithms/composite/composite.h"
 #include "algorithms/grasp/grasp.h"
 #include "algorithms/greedy/greedy.h"
 #include "algorithms/gurobi/gurobi.h"

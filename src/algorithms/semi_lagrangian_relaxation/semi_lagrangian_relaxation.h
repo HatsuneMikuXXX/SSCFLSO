@@ -2,7 +2,7 @@
 #define SEMI_LAGRANGIAN_RELAXATION
 #include "../../algorithms/algorithmClass.h"
 #include <gurobi_c++.h>
-#include "../Preprocess/preprocess.h"
+#include "../preprocess/preprocess.h"
 
 class SemiLagrangianRelaxation : public Algorithm {
 public:

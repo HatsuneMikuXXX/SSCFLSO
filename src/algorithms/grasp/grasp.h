@@ -2,7 +2,7 @@
 #define GRASP_H
 #include <climits>
 #include "../algorithmClass.h"
-#include "../Preprocess/preprocess.h"
+#include "../preprocess/preprocess.h"
 #include "../../helpers/random.h"
 #include "../local_search/local_search.h"
 

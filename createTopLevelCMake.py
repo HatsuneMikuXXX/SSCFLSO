@@ -15,9 +15,12 @@ try:
 except OSError:
 	pass
 cmake = open("src/CMakeLists.txt", "w")
-cmake.write("#CMake created by Python script. Please, only adjust if you know what to do\n")
+cmake.write("# CMake created by Python script. Please, only adjust if you know what to do\n")
 cmake.write("cmake_minimum_required(VERSION 3.22.1)\n")
 cmake.write("project(SSCFLSO_project)\n")
+cmake.write("set(CMAKE_CXX_STANDARD 17)\n")
+cmake.write("set(CMAKE_CXX_STANDARD_REQUIRED ON)\n")
+cmake.write("set(CMAKE_CXX_EXTENSIONS OFF)\n")
 cmake.write("add_executable(SSCFLSO)\n")
 cmake.write("add_subdirectory(algorithms)\n")
 cmake.write("add_subdirectory(benchmarking)\n")

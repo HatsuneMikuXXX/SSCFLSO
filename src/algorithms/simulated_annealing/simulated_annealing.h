@@ -1,7 +1,7 @@
 #ifndef SIMULATED_ANNEALING_H
 #define SIMULATED_ANNEALING_H
 #include "../algorithmClass.h"
-#include "../Preprocess/preprocess.h"
+#include "../preprocess/preprocess.h"
 #include"../../helpers/random.h"
 #include "../local_search/local_search.h"
 

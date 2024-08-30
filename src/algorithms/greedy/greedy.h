@@ -1,7 +1,7 @@
 #ifndef GREEDY_H
 #define GREEDY_H
 #include "../algorithmClass.h"
-#include "../Preprocess/preprocess.h"
+#include "../preprocess/preprocess.h"
 /**
  * Utility is computed in the following way:
  * The utility of unnecessary facilities is always 0. The remaining description skips unnecessary facilities:

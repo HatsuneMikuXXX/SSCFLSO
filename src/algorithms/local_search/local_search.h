@@ -1,7 +1,7 @@
 #ifndef LOCAL_SEARCH_H
 #define LOCAL_SEARCH_H
 #include "../algorithmClass.h"
-#include "../Preprocess/preprocess.h"
+#include "../preprocess/preprocess.h"
 #include "../../helpers/random.h"
 
 class LocalSearch : public Algorithm {
