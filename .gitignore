@@ -14,3 +14,4 @@ CppProperties.json
 results/
 SSCFLSO/
 gurobi.log
+src/CMakeLists.txt

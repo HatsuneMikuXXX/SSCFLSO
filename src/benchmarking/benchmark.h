@@ -1,10 +1,7 @@
 #ifndef BENCHMARK_H
 #define BENCHMARK_H
-#include "../SSCFLSO_model/SSCFLSO_validator.h"
-#include "../SSCFLSO_model/SSCFLSO_generator.h"
+
 #include "../common.h"
-#include "../helpers/timer.h"
-#include "../tracking/report_result.h"
 #include "../algorithms/algorithmClass.h"
 #include "../SSCFLSO_model/SSCFLSO_validator.h"
 

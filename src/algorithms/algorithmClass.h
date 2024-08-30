@@ -2,9 +2,6 @@
 #define ALGORITHM_H
 
 #include <gurobi_c++.h>
-#include "../SSCFLSO_model/SSCFLSO_validator.h"
-#include "../helpers/utility.h"
-#include "../helpers/timer.h"
 #include "../tracking/report_result.h"
 
 class Algorithm {
