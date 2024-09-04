@@ -130,14 +130,11 @@ void start_UI(int argc, char* argv[]) {
                 std::cout << "GRASP parameters not recognized" << std::endl;
             }
             break;
-        case GREEDY_ALGO:
         case GUROBI_ALGO:
         case LAGRANGIAN_RELAXATION_ALGO:
         case PREPROCESS_ALGO:
         case ROUNDING_ALGO:
         case SEMI_LAGRANGIAN_RELAXATION_ALGO:
-        case SIMULATED_ANNEALING_ALGO:
-        case TABU_SEARCH_ALGO:
         case LOCAL_SEARCH_ALGO:
         case COMPOSITE_ALGO:
             algoObjects[algoObjectsSize++] = algorithmFactory(token_string, i, argc);
@@ -154,9 +151,6 @@ void start_UI(int argc, char* argv[]) {
 
 Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_index) {
 	switch (token_string[current_index]) {
-    case GREEDY_ALGO:
-        std::cout << "Greedy algorithm recognized." << std::endl;
-        return new Greedy();
     case GUROBI_ALGO:
         std::cout << "Gurobi algorithm recognized." << std::endl;
         return new Gurobi();
@@ -181,46 +175,6 @@ Algorithm* algorithmFactory(TOKEN* token_string, int& current_index, int max_ind
         case TYPE_BOOLEAN_FALSE:
             std::cout << "SLR algorithm recognized." << std::endl;
             return new SemiLagrangianRelaxation(false);
-        }
-        break;
-    case SIMULATED_ANNEALING_ALGO:
-        if (current_index + 1 >= max_index) {
-            std::cout << "No parameter given for simulated annealing. Skipping over." << std::endl;
-            return NULL;
-        }
-        switch (token_string[++current_index]) {
-        case SOLBY_GIVEN_PARAM:
-            std::cout << "Simulated annealing algorithm recognized." << std::endl;
-           return new SimulatedAnnealing(SimulatedAnnealing::GIVEN);
-        case SOLBY_PREPROCESS_PARAM:
-            std::cout << "Simulated annealing with preprocessing algorithm recognized." << std::endl;
-            return new SimulatedAnnealing(SimulatedAnnealing::PREPROCESS);
-        case SOLBY_RANDOM_PARAM:
-            std::cout << "Simulated annealing with randomization + seeking feasible solution algorithm recognized." << std::endl;
-            return new SimulatedAnnealing(SimulatedAnnealing::RANDOM);
-        case SOLBY_RANDOM_RESTART_PARAM:
-            std::cout << "Simulated annealing with randomization algorithm recognized." << std::endl;
-            return new SimulatedAnnealing(SimulatedAnnealing::RANDOM_RESTART);
-        }
-        break;
-    case TABU_SEARCH_ALGO:
-        if (current_index + 1 >= max_index) {
-            std::cout << "No parameter given for tabu search. Skipping over." << std::endl;
-            return NULL;
-        }
-        switch (token_string[++current_index]) {
-        case SOLBY_GIVEN_PARAM:
-            std::cout << "Tabu search algorithm recognized." << std::endl;
-            return new TabuSearch(TabuSearch::GIVEN);
-        case SOLBY_PREPROCESS_PARAM:
-            std::cout << "Tabu search with preprocessing algorithm recognized." << std::endl;
-            return new TabuSearch(TabuSearch::PREPROCESS);
-        case SOLBY_RANDOM_PARAM:
-            std::cout << "Tabu search with randomization + seeking feasible solution algorithm recognized." << std::endl;
-            return new TabuSearch(TabuSearch::RANDOM);
-        case SOLBY_RANDOM_RESTART_PARAM:
-            std::cout << "Tabu search with randomization algorithm recognized." << std::endl;
-            return new TabuSearch(TabuSearch::RANDOM_RESTART);
         }
         break;
     case LOCAL_SEARCH_ALGO: {
@@ -376,7 +330,6 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
             token = find_algo_token();
             stack.push_back(token);
             return token;
-        case GREEDY_ALGO:
         case GUROBI_ALGO:
         case LAGRANGIAN_RELAXATION_ALGO:
         case PREPROCESS_ALGO:
@@ -428,14 +381,6 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
                 return INVALID;
             }
             return INVALID;
-        case SIMULATED_ANNEALING_ALGO:
-        case TABU_SEARCH_ALGO:
-            // Expect an init parameter
-            stack.clear();
-            token = find_init_param_token();
-            // Place any Algo Token without parameters because we have now seen all params
-            stack.push_back(PREPROCESS_ALGO);
-            return token;
         case LOCAL_SEARCH_ALGO:
             // Expect an init or next parameter
         {

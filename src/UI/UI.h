@@ -25,15 +25,12 @@ enum TOKEN {
 
 	COMPOSITE_ALGO,
 	GRASP_ALGO,
-	GREEDY_ALGO,
 	GUROBI_ALGO,
 	LAGRANGIAN_RELAXATION_ALGO,
 	LOCAL_SEARCH_ALGO,
 	PREPROCESS_ALGO,
 	ROUNDING_ALGO,
 	SEMI_LAGRANGIAN_RELAXATION_ALGO,
-	SIMULATED_ANNEALING_ALGO,
-	TABU_SEARCH_ALGO,
 
 	NEXTNEIGHBOR_BEST_PARAM,
 	NEXTNEIGHBOR_FIRST_PARAM,
@@ -52,9 +49,9 @@ enum TOKEN {
 	TYPE_BOOLEAN_FALSE,
 };
 
-const int number_of_algos = 11;
-const std::string valid_algorithms[number_of_algos] = { "composite", "grasp", "greedy", "gurobi", "lagrangianrelaxation", "localsearch", "preprocess", "rounding", "semilagrangianrelaxation", "simulatedannealing", "tabusearch"}; // must be lower case
-const TOKEN algo_tokens[number_of_algos] = { COMPOSITE_ALGO, GRASP_ALGO, GREEDY_ALGO, GUROBI_ALGO, LAGRANGIAN_RELAXATION_ALGO, LOCAL_SEARCH_ALGO, PREPROCESS_ALGO, ROUNDING_ALGO, SEMI_LAGRANGIAN_RELAXATION_ALGO, SIMULATED_ANNEALING_ALGO, TABU_SEARCH_ALGO, };
+const int number_of_algos = 8;
+const std::string valid_algorithms[number_of_algos] = { "composite", "greedy", "gurobi", "lagrangianrelaxation", "localsearch", "preprocess", "rounding", "semilagrangianrelaxation"}; // must be lower case
+const TOKEN algo_tokens[number_of_algos] = { COMPOSITE_ALGO, GRASP_ALGO, GUROBI_ALGO, LAGRANGIAN_RELAXATION_ALGO, LOCAL_SEARCH_ALGO, PREPROCESS_ALGO, ROUNDING_ALGO, SEMI_LAGRANGIAN_RELAXATION_ALGO };
 
 const int number_of_flags = 5;
 const std::string valid_flags[number_of_flags] = { "help", "algos", "format", "run", "gurobi" };
