@@ -6,10 +6,6 @@ Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solu
 		return Algorithm::TIMER_NOT_RUNNING;
 	}
 	timer.pause_timer();
-	if (!timer.in_time()) {
-		timer.proceed_with_timer();
-		return Algorithm::TIMEOUT;
-	}
 	Validator FLV(instance);
 	FLV.set_solution(new_solution);
 	solution_and_value forTheReport = { new_solution, FLV.value() };
@@ -53,7 +49,7 @@ protected:
 				}
 
 				FLV->set_solution(solution);
-				if (FLV->feasible() && (FLV->value() < current_best->val || current_best->val == -1) && timer->in_time()) {
+				if (FLV->feasible() && (FLV->value() < current_best->val || current_best->val == -1)) {
 					current_best->sol = solution;
 					current_best->val = FLV->value();
 					report->evalResult(*current_best, *timer);
