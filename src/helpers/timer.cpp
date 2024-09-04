@@ -23,6 +23,10 @@ void Timer::proceed_with_timer() {
 	most_recent_start = clock();
 }
 
+bool Timer::running_status(){
+	return running;
+}
+
 double Timer::get_accumulated_cpu_time_in_ms(){
 	assert((running, "Timer has not been started yet"));
 	assert((pausing, "Timer is not paused!"));

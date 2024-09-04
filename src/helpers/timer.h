@@ -12,6 +12,7 @@ public:
 	void pause_timer();
 	void proceed_with_timer();
 	double get_accumulated_cpu_time_in_ms();
+	bool running_status();
 private:
 	clock_t most_recent_start{0};
 	clock_t accumulated_cpu_time{0};
