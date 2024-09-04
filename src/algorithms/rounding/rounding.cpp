@@ -25,5 +25,5 @@ void Rounding::solve(const SSCFLSO& instance, solution_and_value& current_best, 
 	FLV.set_solution(solution);
 	FLV.drop_empty_facilities();
 	improve_solution(instance, current_best, solution, timer, report);
-	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
+	if (gurobi_afterwards) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }

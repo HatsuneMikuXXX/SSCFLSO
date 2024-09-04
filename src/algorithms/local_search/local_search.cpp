@@ -79,7 +79,7 @@ void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_bes
 			std::vector<SolutionContainer> SC_collection = { SolutionContainer(solution) };
 			int sc_index = 0;
 
-			while (timer.in_time()) {
+			while (true) {
 				while (get_next_neighbor(FLV, solution)) {
 					improve_solution(instance, current_best, solution, timer, report);
 					SC_collection[sc_index].add(solution);
@@ -97,7 +97,7 @@ void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_bes
 	default:
 		break;
 	}
-	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
+	if (gurobi_afterwards) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }
 
 bool attempt_to_find_feasible_solution(facility_vector& initial_solution, Validator& FLV, int maxIter) {
@@ -153,7 +153,7 @@ facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, V
 				int facility_id = 0;
 				asa::generate(initial_solution, [&facility_id, &SV]() -> int { return (SV.sol[facility_id++] == 0) ? 0 : flip(); });
 				FLV.set_solution(initial_solution);
-			} while (!FLV.feasible() && timer.in_time());
+			} while (!FLV.feasible());
 		}
 		break;
 	case RANDOM:
@@ -188,7 +188,7 @@ facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, V
 				// Search
 				FLV.set_solution(initial_solution);
 				rating = FLV.evaluate_inf_solution();
-				while (!FLV.feasible() && !stuck_in_local_optima && timer.in_time()) {
+				while (!FLV.feasible() && !stuck_in_local_optima) {
 					stuck_in_local_optima = true;
 					// Add-Remove-Neighborhood
 					asa::for_each(facility_range, [&initial_solution, &rating, &best_neighbor, &tmp_neighbor, &FLV, &stuck_in_local_optima](const int facility_id) {
@@ -205,7 +205,7 @@ facility_vector LocalSearch::produce_initial_solution(const SSCFLSO& instance, V
 					FLV.set_solution(initial_solution);
 					SC_collection[sc_index].add(initial_solution);
 				}
-			} while (!FLV.feasible() && timer.in_time());
+			} while (!FLV.feasible());
 		}
 		break;
 	default:

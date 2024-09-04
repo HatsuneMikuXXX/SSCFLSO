@@ -45,7 +45,7 @@ void LagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value& cu
 	// Apply LR
 	do {
 		// Solve
-		model.set(GRB_DoubleParam_TimeLimit, timer.get_remaining_time() / 1000);
+		model.set(GRB_DoubleParam_TimeLimit);
 		model.optimize();
 		if (model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
 			return;
@@ -77,14 +77,14 @@ void LagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value& cu
 		update_weights(facility_range, client_range, weights, instance, beta, UB, model);
 		update_weights_of_model(instance, facility_range, client_range, model, weights);
 		
-	} while (timer.in_time());
+	} while (true);
 
 	FLV.set_solution(solution);
 	if (!FLV.feasible() && !attempt_to_find_feasible_solution(solution, FLV)) {
 		return;
 	}
 	improve_solution(instance, current_best, solution, timer, report);
-	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
+	if (gurobi_afterwards) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }
 
 double LagrangianRelaxation::get_gradient_magnitude(const range_vector& facility_range, const range_vector& client_range, const SSCFLSO& instance, GRBModel& model) const {

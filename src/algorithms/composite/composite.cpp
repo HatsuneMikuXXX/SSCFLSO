@@ -27,5 +27,5 @@ void Composite::solve(const SSCFLSO& instance, solution_and_value& current_best,
 			algo_ptr->solve(instance, current_best, timer, report, false);
 		}
 	});
-	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, current_best.sol, timer, report); }
+	if (gurobi_afterwards) { solve_with_gurobi_afterwards(instance, current_best, current_best.sol, timer, report); }
 }

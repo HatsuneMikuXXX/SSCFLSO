@@ -49,7 +49,7 @@ void SemiLagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value
 	do {
 		// Solve
 		model.update();
-		model.set(GRB_DoubleParam_TimeLimit, timer.get_remaining_time());
+		model.set(GRB_DoubleParam_TimeLimit);
 		model.optimize();
 
 		if (model.get(GRB_IntAttr_Status) != GRB_OPTIMAL) {
@@ -90,7 +90,7 @@ void SemiLagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value
 				});
 			});
 		}
-	} while (timer.in_time());
+	} while (true);
 };
 
 std::vector<std::vector<double>> SemiLagrangianRelaxation::weight_update_matrix(const SSCFLSO& instance) const {

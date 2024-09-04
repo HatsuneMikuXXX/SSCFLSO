@@ -27,7 +27,7 @@ void GRASP::solve(const SSCFLSO& instance, solution_and_value& current_best, Tim
 	LocalSearch ls = LocalSearch(LocalSearch::GIVEN, LocalSearch::FIRST);
 	std::vector<SolutionContainer> sc_collection;
 	int sc_index = 0;
-	while (iter++ < maxIter && timer.in_time()) {
+	while (iter++ < maxIter) {
 		greedy_random(FLV, SV.sol, solution);
 		if (asa::any_of(sc_collection, [&solution](const SolutionContainer& sc) -> bool { return sc.contains(solution); })) {
 			continue;
@@ -46,7 +46,7 @@ void GRASP::solve(const SSCFLSO& instance, solution_and_value& current_best, Tim
 		}
 		sc_index++;
 	}
-	if (gurobi_afterwards && timer.in_time()) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
+	if (gurobi_afterwards) { solve_with_gurobi_afterwards(instance, current_best, solution, timer, report); }
 }
 
 void GRASP::greedy_random(Validator& FLV, const facility_vector& CL, facility_vector& solution) const {
