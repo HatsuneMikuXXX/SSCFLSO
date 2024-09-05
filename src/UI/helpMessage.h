@@ -7,6 +7,6 @@ usage: SSCFLSO (name of the executable)
 	[--algos] (displays list of algorithms) 
 	[--format] (displays specified format for SSCFLSO instances)
 	[--gurobi] (will run gurobi after the algorithm finishes)
-	--run input_file_or_directory output_directory time_limit_in_ms algorithms
+	--run input_file_or_directory output_directory time_limit_in_ms algorithms !!: Slurm branch: Input any timelimit. It won't be really considered.
 )~~~~";
 #endif
