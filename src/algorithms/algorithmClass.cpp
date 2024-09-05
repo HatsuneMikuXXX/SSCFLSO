@@ -11,7 +11,7 @@ Algorithm::UPDATE_CODE Algorithm::improve_solution(const SSCFLSO& instance, solu
 	solution_and_value forTheReport = { new_solution, FLV.value() };
 	if (FLV.value() < current_best.val || current_best.val == -1) {
 		// Use Value
-		report.evalResult(forTheReport, timer);
+		report.evalResult(forTheReport, FLV.feasible(), timer);
 		timer.proceed_with_timer();
 		current_best.sol = new_solution;
 		current_best.val = FLV.value();
@@ -52,7 +52,7 @@ protected:
 				if (FLV->feasible() && (FLV->value() < current_best->val || current_best->val == -1)) {
 					current_best->sol = solution;
 					current_best->val = FLV->value();
-					report->evalResult(*current_best, *timer);
+					report->evalResult(*current_best, FLV.feasible(), *timer);
 				}
 			}
 		}

@@ -8,20 +8,20 @@
 class ReportResult {
 public:
 	ReportResult(
+		const std::string& directory,
 		const SSCFLSO& instance,
 		const std::string& instance_name,
 		const int timelimit,
 		const std::string algorithm_name,
 		const bool gurobi_postprocessing);
-	void evalResult(const solution_and_value& current_best, Timer& timer);
-	void finishUp(const std::string& save_to_path);
+	void evalResult(const solution_and_value& current_best, const bool is_feasible, Timer& timer);
 	static ReportResult dummy_report();
 private:
 	ReportResult(); // For the dummy report
 	// Control flow
-	bool finishedUp{true};
 	// Information about the instance
 	const SSCFLSO& instance;
+	std::string& file{""};
 	const std::string& instance_name{""};
 	const int timelimit{0};
 	const std::string algorithm_name{""};
