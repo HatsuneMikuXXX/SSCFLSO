@@ -1,7 +1,6 @@
 #include "report_result.h"
 
 ReportResult::ReportResult() : instance({}) {
-	finishedUp = true;
 }
 
 ReportResult::ReportResult(
@@ -10,7 +9,6 @@ ReportResult::ReportResult(
 	const std::string& instance_name, 
 	const std::string algorithm_name, 
 	const bool gurobi_postprocessing) :
-	directory(directory),
 	instance(instance), 
 	instance_name(instance_name), 
 	algorithm_name(algorithm_name), 
@@ -35,7 +33,7 @@ ReportResult ReportResult::dummy_report() {
 
 void ReportResult::evalResult(const solution_and_value& current_best, const bool is_feasible, Timer& timer) {
 	LastSolution = current_best;
-	time_stamps.push_back(timer.get_accumulated_cpu_time());
+	time_stamps.push_back(timer.get_accumulated_cpu_time_in_ms());
 	value_stamps.push_back(LastSolution.val);
 	number_of_facilities_stamps.push_back(asa::sum(LastSolution.sol, 0));
 	

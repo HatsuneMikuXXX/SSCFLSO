@@ -52,7 +52,7 @@ protected:
 				if (FLV->feasible() && (FLV->value() < current_best->val || current_best->val == -1)) {
 					current_best->sol = solution;
 					current_best->val = FLV->value();
-					report->evalResult(*current_best, FLV.feasible(), *timer);
+					report->evalResult(*current_best, FLV->feasible(), *timer);
 				}
 			}
 		}
@@ -134,8 +134,6 @@ std::vector<double> Algorithm::solve_with_gurobi_afterwards(const SSCFLSO& insta
 			model.setCallback(&cb);
 		}
 		// Start solving
-		double remaining_time_limit_in_sec = timer.get_remaining_time() / 1000;
-		model.set(GRB_DoubleParam_TimeLimit, remaining_time_limit_in_sec);
 		model.optimize();
 		if (!continuous) { 
 			// Callbacks should update the solution so the return value doesn't matter

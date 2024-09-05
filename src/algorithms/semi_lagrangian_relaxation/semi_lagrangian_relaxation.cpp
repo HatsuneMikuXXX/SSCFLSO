@@ -49,7 +49,6 @@ void SemiLagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value
 	do {
 		// Solve
 		model.update();
-		model.set(GRB_DoubleParam_TimeLimit);
 		model.optimize();
 
 		if (model.get(GRB_IntAttr_Status) != GRB_OPTIMAL) {

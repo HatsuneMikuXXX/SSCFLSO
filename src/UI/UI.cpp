@@ -446,12 +446,6 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
                     return token;
                 }
             }
-            if (stack.back() == SIMULATED_ANNEALING_ALGO || stack.back() == TABU_SEARCH_ALGO) {
-                // Init
-                token = find_init_param_token();
-                stack.push_back(token);
-                return token;
-            }
             // Expect another Algo
             token = find_algo_token();
             stack.push_back(token);
@@ -492,12 +486,6 @@ TOKEN scan_arg(std::vector<TOKEN>& stack, char* argument) {
                 stack.push_back(token);
                 return token;
             }
-        }
-        if(stack.back() == SIMULATED_ANNEALING_ALGO || stack.back() == TABU_SEARCH_ALGO) {
-            // Init
-            token = find_init_param_token();
-            stack.push_back(token);
-            return token;
         }
         // Expect Algo or flag
         {

@@ -20,7 +20,6 @@
 // Unit Tests
 #include "SSCFLSO_model/SSCFLSO_unit_test.h"
 #include "algorithms/algorithm_unit_test.h"
-#include "algorithms/greedy/greedy_unit_test.h"
 #include "algorithms/rounding/rounding_unit_test.h"
 #include "algorithms/local_search/local_search_unit_test.h"
 #include "algorithms/composite/composite_unit_test.h"

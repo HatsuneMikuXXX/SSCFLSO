@@ -45,12 +45,7 @@ void LagrangianRelaxation::solve(const SSCFLSO& instance, solution_and_value& cu
 	// Apply LR
 	do {
 		// Solve
-		model.set(GRB_DoubleParam_TimeLimit);
 		model.optimize();
-		if (model.get(GRB_IntAttr_Status) == GRB_TIME_LIMIT) {
-			return;
-		}
-
 		if (model.get(GRB_IntAttr_Status) != GRB_OPTIMAL) {
 			// Parameterized model not solved to optimality
 			throw std::runtime_error("LR not solved to optimality. Maybe infeasible?");
