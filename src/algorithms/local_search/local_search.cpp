@@ -57,9 +57,7 @@ void LocalSearch::solve(const SSCFLSO& instance, solution_and_value& current_bes
 			}
 		}
 		while (get_next_neighbor(FLV, solution)) {
-			if (improve_solution(instance, current_best, solution, timer, report) == TIMEOUT) {
-				break;
-			}
+			improve_solution(instance, current_best, solution, timer, report);
 		}
 		break;
 	case PREPROCESS:
