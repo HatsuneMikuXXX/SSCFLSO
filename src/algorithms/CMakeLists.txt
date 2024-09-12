@@ -6,6 +6,7 @@ add_subdirectory(local_search)
 add_subdirectory(preprocess)
 add_subdirectory(rounding)
 add_subdirectory(semi_lagrangian_relaxation)
+add_subdirectory(eager_search)
 
 target_sources(SSCFLSO PUBLIC
 		algorithmClass.cpp

@@ -2,6 +2,7 @@
 #define TIMER_H
 #include <cassert>
 #include <time.h>
+#include <cmath>
 
 const int ONE_MINUTE = 60000;
 

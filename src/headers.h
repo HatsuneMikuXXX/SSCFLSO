@@ -15,6 +15,7 @@
 #include "algorithms/preprocess/preprocess.h"
 #include "algorithms/rounding/rounding.h"
 #include "algorithms/semi_lagrangian_relaxation/semi_lagrangian_relaxation.h"
+#include "algorithms/eager_search/eager_search.h"
 
 
 // Unit Tests
