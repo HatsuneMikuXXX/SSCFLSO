@@ -30,6 +30,5 @@ bool Timer::running_status(){
 double Timer::get_accumulated_cpu_time_in_ms(){
 	assert((running, "Timer has not been started yet"));
 	assert((pausing, "Timer is not paused!"));
-	double precise_result = 1000 * (((double)accumulated_cpu_time)/CLOCKS_PER_SEC);
-	return std::ceil(precise_result * 1000) / 1000.0; // round after three decimals
+	return 1000 * (((double)accumulated_cpu_time)/CLOCKS_PER_SEC);
 }

@@ -1,6 +1,6 @@
 #include "report_result.h"
 
-ReportResult::ReportResult() : instance({}) {
+ReportResult::ReportResult() : instance{} {
 }
 
 ReportResult::ReportResult(

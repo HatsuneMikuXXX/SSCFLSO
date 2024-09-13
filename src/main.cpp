@@ -60,10 +60,10 @@ int main(int argc, char* argv[])
         case 9:
             algo = new GRASP(0.5);
             grb = false;
+            break;
         default:
             return -1;
     }
-
     {
          try {
             const SSCFLSO instance = Generator::load_instance(argv[1], true);
