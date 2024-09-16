@@ -37,36 +37,30 @@ void ReportResult::evalResult(const solution_and_value& current_best, const bool
 	value_stamps.push_back(LastSolution.val);
 	number_of_facilities_stamps.push_back(asa::sum(LastSolution.sol, 0));
 	
+	std::string b = is_feasible ? "true" : "false";
+
+	std::string information = 
+		"{\"Instance ID\" : \"" + instance_name + "\", " 
+		+ "\"Algorithm\" : \"" + algorithm_name + "\", "
+		+ "\"Feasible\" : " + b + ", "
+		+ "\"Solution Value\" : " + std::to_string(LastSolution.val) + ", "
+		+ "\"Solution\" : " + primitive_list_to_string(LastSolution.sol) + ", "
+		+ "\"Time stamps\" : " + primitive_list_to_string(time_stamps) + ", "
+		+ "\"Value stamps\" : " + primitive_list_to_string(value_stamps) + ", "
+		+ "\"Number of open facilities stamps\" : " + primitive_list_to_string(number_of_facilities_stamps) + "} ";
+
+	std::cout << information << std::endl;
+
 	{
 		std::ofstream out(file + ".json");
-		out << "{\"Instance ID\" : \"" << instance_name << "\", ";
-		out << "\"Algorithm\" : \"" << algorithm_name << "\", ";
-		out << "\"Gurobi Postprocessing\" : \"" << gurobi_postprocessing << "\", ";
-
-		out << "\"Feasible\" : " << is_feasible << ", ";
-		out << "\"Solution Value\" : " << LastSolution.val << ", ";
-		out << "\"Solution\" : " << primitive_list_to_string(LastSolution.sol) << ", ";
-
-		out << "\"Time stamps\" : " << primitive_list_to_string(time_stamps) << ", ";
-		out << "\"Value stamps\" : " << primitive_list_to_string(value_stamps) << ", ";
-		out << "\"Number of open facilities stamps\" : " << primitive_list_to_string(number_of_facilities_stamps) << "} ";
+		out << information;
 		out.close();
 	}
 
 	// Create safety-copy
 	{
 		std::ofstream out(file + "_safetycopy.json");
-		out << "{\"Instance ID\" : \"" << instance_name << "\", ";
-		out << "\"Algorithm\" : \"" << algorithm_name << "\", ";
-		out << "\"Gurobi Postprocessing\" : \"" << gurobi_postprocessing << "\", ";
-
-		out << "\"Feasible\" : " << is_feasible << ", ";
-		out << "\"Solution Value\" : " << LastSolution.val << ", ";
-		out << "\"Solution\" : " << primitive_list_to_string(LastSolution.sol) << ", ";
-
-		out << "\"Time stamps\" : " << primitive_list_to_string(time_stamps) << ", ";
-		out << "\"Value stamps\" : " << primitive_list_to_string(value_stamps) << ", ";
-		out << "\"Number of open facilities stamps\" : " << primitive_list_to_string(number_of_facilities_stamps) << "} ";
+		out << information;
 		out.close();
 	}
 }
