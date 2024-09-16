@@ -6,7 +6,7 @@ int main(int argc, char* argv[])
     std::cout << "Starting SSCFLSO Application" << std::endl;
     srand(17);
     if(argc != 4) {
-        std::cout << "Wrong number of algorithms" << std::endl;
+        std::cout << "Wrong number of arguments" << std::endl;
         return 0;
     }
 
